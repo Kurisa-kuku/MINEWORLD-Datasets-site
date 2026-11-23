@@ -1,0 +1,60 @@
+name: Dataset report
+description: Report a broken link, wrong metadata, license issue or privacy concern.
+title: "[Report] "
+labels: ["dataset-report", "needs-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 举报数据集 / Report a dataset
+
+        举报是公开的。**不要粘贴密码、私有令牌、私聊内容或他人的个人信息。** 如问题涉及隐私，请只描述问题并请维护者私下联系。
+
+        Reports are public. **Do not paste passwords, private tokens, private chat or anyone's personal data.** For privacy issues, describe the concern and ask a maintainer to contact you privately.
+
+  - type: input
+    id: dataset
+    attributes:
+      label: Dataset slug or URL / 数据集 slug 或 URL
+      placeholder: your-dataset-slug
+    validations:
+      required: true
+
+  - type: dropdown
+    id: report-type
+    attributes:
+      label: Report type / 举报类型
+      options:
+        - Broken download link 下载链接失效
+        - Incorrect metadata 元数据错误
+        - License or attribution problem 许可证 / 署名问题
+        - Privacy concern 隐私风险
+        - Data quality problem 数据质量问题
+        - Impersonation or fraud 冒用 / 欺诈
+        - Other 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Details / 详细说明
+      description: What is wrong, where did you see it, and what outcome do you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence / 证据 (optional)
+      description: Public URLs, error messages or screenshots uploaded to GitHub.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: declaration
+    attributes:
+      label: Declaration / 声明
+      options:
+        - label: I have not included private information, and this report is made in good faith. / 我没有包含隐私信息，并善意提交此举报。
+          required: true

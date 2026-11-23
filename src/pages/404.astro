@@ -1,0 +1,33 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PixelIcon from '../components/PixelIcon.astro';
+import { SITE, localePath } from '../config';
+---
+<BaseLayout lang="en" title="404 — Chunk not found" description="This page was not generated." noindex>
+  <section class="section">
+    <div class="container" style="display:flex;justify-content:center;padding-block:60px">
+      <div class="panel" style="max-width:760px;width:100%">
+        <div class="panel-body" style="padding:clamp(24px,5vw,48px);text-align:center">
+          <div class="eyebrow" style="justify-content:center">404 · CHUNK NOT FOUND</div>
+          <h1 class="h1" style="margin-top:14px;font-size:clamp(2rem,5vw,3.5rem)">You fell out of the world.</h1>
+          <p class="muted" style="margin-top:8px">你掉出了这个世界。</p>
+          <p class="lead" style="margin-top:20px">
+            That page is not generated. Check the URL, or head back to solid ground.<br />
+            该页面不存在。请检查 URL，或回到坚实的地面。
+          </p>
+          <div class="btn-row" style="justify-content:center;margin-top:26px">
+            <a class="btn btn--primary" href={localePath('en')}>
+              <PixelIcon name="arrowLeft" size={13} /> Return to spawn
+            </a>
+            <a class="btn" href={localePath('zh')}>
+              回到出生点
+            </a>
+            <a class="btn btn--ghost" href={SITE.github} target="_blank" rel="noopener noreferrer">
+              <PixelIcon name="github" size={13} /> GitHub
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

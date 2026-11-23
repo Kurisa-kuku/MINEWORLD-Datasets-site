@@ -1,0 +1,112 @@
+---
+import type { Lang } from '../config';
+import { SITE } from '../config';
+import { getT } from '../i18n';
+import { formatInteger } from '../lib/format';
+import PixelIcon from './PixelIcon.astro';
+
+interface Props {
+  lang: Lang;
+  slug: string;
+  count: number;
+  issueNumber?: number;
+}
+
+const { lang, slug, count, issueNumber } = Astro.props;
+const t = await getT(lang);
+const issueUrl = issueNumber ? `${SITE.issues}/${issueNumber}` : '';
+const displayCount = formatInteger(count, lang);
+---
+<div class="detail-like-row">
+  <button
+    type="button"
+    class="like-button"
+    data-like
+    data-slug={slug}
+    data-count={String(count)}
+    data-issue-number={issueNumber ? String(issueNumber) : ''}
+    data-issue-url={issueUrl}
+    aria-label={t('dataset.like')}
+    aria-pressed="false"
+  >
+    <span class="like-button__heart"><PixelIcon name="heart" size={15} /></span>
+    <span>
+      <span class="like-button__label">{t('dataset.like')}</span>
+      <span class="like-count" data-like-count>{displayCount}</span>
+    </span>
+  </button>
+  <span class="tiny faint" style="max-width:220px;line-height:1.5">{t('dataset.reactionHint')}</span>
+</div>
+
+<script>
+  import { addReaction, clearSession, findMyReaction, getSession, removeReaction, GitHubError } from '../scripts/auth';
+  import { getClientT } from '../scripts/client-i18n';
+  import { toast } from '../scripts/utils';
+
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-like]');
+  for (const button of buttons) {
+    const issueNumber = Number(button.dataset.issueNumber || 0);
+    const issueUrl = button.dataset.issueUrl || '';
+    const countNode = button.querySelector<HTMLElement>('[data-like-count]');
+    let busy = false;
+
+    function setCount(next: number): void {
+      if (!countNode) return;
+      countNode.textContent = new Intl.NumberFormat(window.MW?.config.lang === 'zh' ? 'zh-CN' : 'en-US').format(next);
+      button.dataset.count = String(next);
+    }
+
+    function setLiked(liked: boolean): void {
+      button.classList.toggle('is-liked', liked);
+      button.setAttribute('aria-pressed', String(liked));
+    }
+
+    button.addEventListener('click', async () => {
+      const t = await getClientT();
+      if (busy) return;
+      if (!issueNumber) {
+        toast(t('like.unavailable'));
+        return;
+      }
+      const session = getSession();
+      if (!session) {
+        window.open(`${issueUrl}#reactions`, '_blank', 'noopener,noreferrer');
+        toast(t('like.githubHint'));
+        return;
+      }
+
+      busy = true;
+      try {
+        const existing = await findMyReaction(issueNumber, session.login);
+        const current = Number(button.dataset.count || 0);
+        if (existing) {
+          await removeReaction(issueNumber, existing);
+          setLiked(false);
+          setCount(Math.max(0, current - 1));
+          toast(t('like.removed'));
+        } else {
+          await addReaction(issueNumber, '+1');
+          setLiked(true);
+          setCount(current + 1);
+          toast(t('like.added'));
+        }
+      } catch (error) {
+        if (error instanceof GitHubError && error.status === 401) clearSession();
+        toast(t('like.error'));
+      } finally {
+        busy = false;
+      }
+    });
+
+    const session = getSession();
+    if (session && issueNumber) {
+      void findMyReaction(issueNumber, session.login)
+        .then((existing) => {
+          if (existing) setLiked(true);
+        })
+        .catch(() => {
+          // A failed lookup must not break the page; clicking retries.
+        });
+    }
+  }
+</script>

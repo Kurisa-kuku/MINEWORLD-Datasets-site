@@ -1,0 +1,74 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PixelIcon from '../../../components/PixelIcon.astro';
+import type { Lang } from '../../../config';
+import { withBase } from '../../../config';
+import { getT } from '../../../i18n';
+import { getAllDatasets } from '../../../lib/data';
+import { formatDate } from '../../../lib/format';
+
+export function getStaticPaths() {
+  return [{ params: { lang: 'en' } }, { params: { lang: 'zh' } }];
+}
+
+const lang = Astro.params.lang as Lang;
+const t = await getT(lang);
+const datasets = getAllDatasets(lang).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+---
+<BaseLayout lang={lang} title={t('editor.title')} description={t('editor.description')} noindex>
+  <header class="page-hero">
+    <div class="container page-hero__inner">
+      <div class="page-hero__copy">
+        <div class="eyebrow">{t('editor.eyebrow')}</div>
+        <h1>{t('editor.title')}</h1>
+        <p class="page-hero__desc">{t('editor.description')}</p>
+      </div>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <div class="section-head__copy">
+          <div class="eyebrow">{t('editor.chooseDataset')}</div>
+          <h2 class="h2">{t('editor.firstStep')}</h2>
+        </div>
+      </div>
+
+      <div class="stack">
+        {datasets.map((dataset) => (
+          <a
+            class="download-link"
+            href={`${withBase(`/${lang}/edit/${dataset.slug}/`)}`}
+            style="align-items:stretch"
+          >
+            <span class="download-link__main">
+              <img
+                src={withBase(dataset.meta.coverThumb)}
+                alt=""
+                width="160"
+                height="90"
+                loading="lazy"
+                style="width:160px;height:90px;object-fit:cover;border:1px solid var(--border);flex:0 0 auto"
+              />
+              <span class="download-link__label">
+                {dataset.meta.title}
+                <span class="download-link__url" style="max-width:60ch">
+                  {dataset.summary.en || dataset.summary.zh} · {t('common.lastUpdated')} {formatDate(dataset.updatedAt, lang)}
+                </span>
+              </span>
+            </span>
+            <span class="btn btn--small btn--primary" aria-hidden="true">
+              <PixelIcon name="edit" size={12} /> {t('actions.edit')}
+            </span>
+          </a>
+        ))}
+      </div>
+
+      <div class="notice" style="margin-top:24px">
+        <PixelIcon name="info" size={15} />
+        <span>{t('editor.reviewNote')}</span>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

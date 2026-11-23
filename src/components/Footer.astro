@@ -1,0 +1,87 @@
+---
+import type { Lang } from '../config';
+import { SITE, localePath } from '../config';
+import { getT } from '../i18n';
+import { getLatestUpdateDate, getTagName } from '../lib/data';
+import { formatDate } from '../lib/format';
+import PixelIcon from './PixelIcon.astro';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = await getT(lang);
+const year = new Date().getFullYear();
+const latest = getLatestUpdateDate();
+---
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-main">
+      <div class="footer-brand">
+        <a class="brand" href={localePath(lang)}>
+          <span class="brand-mark" aria-hidden="true"></span>
+          <span class="brand-copy">
+            <span class="brand-name">MINEWORLD</span>
+            <span class="brand-sub">Datasets</span>
+          </span>
+        </a>
+        <p class="footer-tagline">{t('site.footerNote')}</p>
+        <div class="cluster" style="margin-top:16px">
+          <a class="btn btn--small btn--gold" href={SITE.recorderRepo} target="_blank" rel="noopener noreferrer">
+            <PixelIcon name="pickaxe" size={12} /> {t('nav.recorder')}
+          </a>
+          <a class="btn btn--small" href={SITE.github} target="_blank" rel="noopener noreferrer">
+            <PixelIcon name="github" size={12} /> GitHub
+          </a>
+        </div>
+        <p class="footer-note">{t('site.notAffiliated')}</p>
+      </div>
+
+      <div>
+        <h2 class="footer-heading">{t('footer.catalog')}</h2>
+        <div class="footer-links">
+          <a href={localePath(lang, 'datasets')}>{t('nav.datasets')}</a>
+          <a href={localePath(lang, 'submit')}>{t('footer.submit')}</a>
+          <a href={`${localePath(lang, 'datasets')}?sort=updated`}>{t('common.lastUpdated')}</a>
+          <a href={`${localePath(lang, 'datasets')}?sort=likes`}>{getTagName('sort', 'likes', lang)}</a>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="footer-heading">{t('footer.project')}</h2>
+        <div class="footer-links">
+          <a href={SITE.recorderRepo} target="_blank" rel="noopener noreferrer">
+            Mwarecorder <PixelIcon name="external" size={10} />
+          </a>
+          <a href={localePath(lang, 'docs')}>{t('footer.docs')}</a>
+          <a href={localePath(lang, 'contributors')}>{t('footer.contributors')}</a>
+          <a href={localePath(lang, 'admin')}>{t('footer.moderation')}</a>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="footer-heading">{t('footer.community')}</h2>
+        <div class="footer-links">
+          <a href={SITE.issues} target="_blank" rel="noopener noreferrer">{t('footer.issues')}</a>
+          <a href={SITE.discussions} target="_blank" rel="noopener noreferrer">{t('footer.discussions')}</a>
+          <a href={SITE.github} target="_blank" rel="noopener noreferrer">{t('footer.source')}</a>
+          <a href={SITE.licenseUrl} target="_blank" rel="noopener noreferrer">{t('footer.license')}</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div>
+        © {year} MineWorld Datasets · {t('footer.madeFor')} · {t('footer.dataLicense')}
+      </div>
+      <div class="footer-bottom__links">
+        <span>{t('common.lastUpdated')}: {formatDate(latest, lang)}</span>
+        <a href={SITE.licenseUrl} target="_blank" rel="noopener noreferrer">MIT</a>
+        <a class="back-to-top" href="#top">
+          {t('footer.backToTop')} <PixelIcon name="arrowUp" size={10} />
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>

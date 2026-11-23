@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Mwarecorder source & user guide
+    url: https://github.com/Kurisa-kuku/MineWorld-Agent-Recorder
+    about: Installation, recording settings, output format and verification.
+  - name: Submission wiki
+    url: https://github.com/Kurisa-kuku/MINEWORLD-Datasets-site#readme
+    about: Read the data contract and review checklist before submitting.
+  - name: GitHub Discussions
+    url: https://github.com/Kurisa-kuku/MINEWORLD-Datasets-site/discussions
+    about: Ask a question or discuss a dataset outside the issue queues.

@@ -1,0 +1,169 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import DatasetCard from '../../../components/DatasetCard.astro';
+import FilterSidebar from '../../../components/FilterSidebar.astro';
+import PixelIcon from '../../../components/PixelIcon.astro';
+import type { Lang } from '../../../config';
+import { localePath } from '../../../config';
+import { getT } from '../../../i18n';
+import { getAllDatasets, getFacets, getTagDefinitions, getTagName } from '../../../lib/data';
+import { formatInteger } from '../../../lib/format';
+
+export function getStaticPaths() {
+  return [{ params: { lang: 'en' } }, { params: { lang: 'zh' } }];
+}
+
+const lang = Astro.params.lang as Lang;
+const t = await getT(lang);
+const datasets = getAllDatasets(lang);
+const facets = getFacets();
+const sortOptions = getTagDefinitions('sort');
+
+const counts: Record<string, Record<string, number>> = {
+  format: {},
+  mc: {},
+  mod: {},
+  env: {},
+  verify: {},
+  task: {},
+  dim: {},
+  use: {},
+  quality: {},
+  license: {},
+  size: {},
+  access: {},
+  media: {},
+};
+
+function increment(group: string, key: string): void {
+  counts[group] ??= {};
+  counts[group][key] = (counts[group][key] ?? 0) + 1;
+}
+
+for (const dataset of datasets) {
+  increment('format', dataset.format);
+  for (const version of dataset.compatibility.minecraftVersions) increment('mc', version);
+  for (const version of dataset.compatibility.modVersions ?? []) increment('mod', version);
+  increment('env', dataset.environment);
+  increment('verify', dataset.compatibility.verification);
+  for (const task of dataset.tags.tasks) increment('task', task);
+  for (const dimension of dataset.tags.dimensions) increment('dim', dimension);
+  for (const use of dataset.tags.trainingUses) increment('use', use);
+  for (const quality of dataset.tags.quality) increment('quality', quality);
+  increment('license', dataset.license);
+  increment('size', dataset.meta.sizeRange);
+  increment('access', dataset.access.type);
+  if (dataset.meta.streamSet.has('video')) increment('media', 'video');
+  if (dataset.meta.streamSet.has('events')) increment('media', 'events');
+}
+
+const initialResultCount = t('library.results', { count: datasets.length });
+const pageTitle = t('library.title');
+---
+<BaseLayout lang={lang} title={pageTitle} description={t('library.description')}>
+  <header class="library-header">
+    <div class="container library-header__inner">
+      <div class="library-header__copy">
+        <div class="eyebrow">{t('library.eyebrow')}</div>
+        <h1 class="h1 library-header__title" style="font-size:clamp(2rem,4.4vw,3.6rem)">{t('library.title')}</h1>
+        <p class="library-header__desc">{t('library.description')}</p>
+      </div>
+      <div class="library-count">
+        {formatInteger(datasets.length, lang)}
+        <span>{t('common.datasets')}</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container library-layout">
+    <FilterSidebar lang={lang} facets={facets} counts={counts} />
+
+    <section class="library-main" aria-labelledby="results-title">
+      <h2 class="sr-only" id="results-title">{t('nav.datasets')}</h2>
+
+      <div class="mobile-filter-bar">
+        <button type="button" class="btn js-open-filters" aria-controls="library-filters" aria-expanded="false">
+          <PixelIcon name="filter" size={13} />
+          {t('library.mobileFilters')}
+          <span class="badge tone-grass js-filter-count" hidden></span>
+        </button>
+        <button type="button" class="btn btn--ghost js-copy-view" title={t('library.copyView')}>
+          <PixelIcon name="link" size={13} />
+        </button>
+      </div>
+
+      <div class="library-toolbar">
+        <div class="library-search">
+          <PixelIcon name="search" size={16} />
+          <label class="sr-only" for="library-search">{t('library.searchLabel')}</label>
+          <input
+            class="input"
+            type="search"
+            id="library-search"
+            name="q"
+            placeholder={t('library.searchPlaceholder')}
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+        <div class="sort-select">
+          <label for="library-sort">{t('library.sortLabel')}</label>
+          <select class="select" id="library-sort">
+            {sortOptions.map((option) => (
+              <option value={option.slug}>{getTagName('sort', option.slug, lang)}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div class="view-actions">
+        <div class="view-actions__count" data-result-count aria-live="polite">{initialResultCount}</div>
+        <button type="button" class="view-actions__link js-copy-view" title={t('library.copyView')}>
+          <PixelIcon name="link" size={12} />
+          {t('library.copyView')}
+        </button>
+      </div>
+
+      <div class="active-filters" data-active-filters aria-label={t('library.activeFilters')}></div>
+
+      <div class="dataset-grid" id="dataset-grid">
+        {datasets.map((dataset, index) => (
+          <DatasetCard dataset={dataset} lang={lang} eager={index < 3} />
+        ))}
+      </div>
+
+      <div
+        class:list={['empty-state', 'no-results', datasets.length === 0 ? 'is-visible' : '']}
+        data-empty-state
+      >
+        {datasets.length === 0 ? (
+          <>
+            <div class="empty-state__icon"><PixelIcon name="cube" size={28} /></div>
+            <h2>{t('home.emptyTitle')}</h2>
+            <p>{t('home.emptyDesc')}</p>
+            <a class="btn btn--primary" href={localePath(lang, 'submit')}>
+              <PixelIcon name="upload" size={13} /> {t('home.ctaSubmit')}
+            </a>
+          </>
+        ) : (
+          <>
+            <div class="empty-state__icon"><PixelIcon name="search" size={28} /></div>
+            <h2>{t('library.noResults')}</h2>
+            <p>{t('library.noResultsDesc')}</p>
+            <button type="button" class="btn btn--primary js-clear-filters">
+              <PixelIcon name="refresh" size={13} /> {t('library.clearFilters')}
+            </button>
+          </>
+        )}
+      </div>
+
+      <noscript>
+        <p class="panel-note" style="margin-top:24px">
+          {lang === 'zh'
+            ? '筛选与排序需要 JavaScript。你仍可以直接打开任意数据集详情页。'
+            : 'Filtering and sorting need JavaScript. You can still open any dataset detail page directly.'}
+        </p>
+      </noscript>
+    </section>
+  </div>
+</BaseLayout>

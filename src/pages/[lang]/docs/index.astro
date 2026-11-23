@@ -1,0 +1,78 @@
+---
+import { getCollection } from 'astro:content';
+import type { Lang } from '../../../config';
+import { withBase } from '../../../config';
+import { getT } from '../../../i18n';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import DocsSidebar from '../../../components/DocsSidebar.astro';
+import PixelIcon from '../../../components/PixelIcon.astro';
+import { formatDate } from '../../../lib/format';
+
+export function getStaticPaths() {
+  return [{ params: { lang: 'en' } }, { params: { lang: 'zh' } }];
+}
+
+const lang = Astro.params.lang as Lang;
+const t = await getT(lang);
+const all = await getCollection('docs');
+const navDocs = all
+  .filter((entry) => entry.id.startsWith(`${lang}/`))
+  .sort((a, b) => a.data.order - b.data.order)
+  .map((entry) => ({
+    slug: entry.id.replace(`${lang}/`, '').replace(/\.md$/, ''),
+    title: entry.data.title,
+    description: entry.data.description,
+    updated: entry.data.updated,
+    order: entry.data.order,
+  }));
+const pageTitle = t('docs.title');
+---
+<BaseLayout lang={lang} title={pageTitle} description={t('docs.description')}>
+  <header class="page-hero">
+    <div class="container page-hero__inner">
+      <div class="page-hero__copy">
+        <div class="eyebrow">{t('docs.eyebrow')}</div>
+        <h1>{t('docs.title')}</h1>
+        <p class="page-hero__desc">{t('docs.description')}</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="container docs-layout">
+    <DocsSidebar lang={lang} docs={navDocs} currentSlug="" />
+    <div class="docs-content">
+      <div class="docs-content__head">
+        <div class="eyebrow">{t('docs.eyebrow')}</div>
+        <h1 style="font-size:clamp(1.6rem,3vw,2.2rem)">{t('docs.title')}</h1>
+        <p class="docs-content__desc">{t('docs.description')}</p>
+      </div>
+      <div style="padding:20px" class="stack">
+        {navDocs.map((doc) => (
+          <a
+            class="submit-step"
+            href={withBase(`/${lang}/docs/${doc.slug}/`)}
+            style="text-decoration:none;color:var(--ink)"
+          >
+            <div class="cluster" style="justify-content:space-between">
+              <span class="eyebrow" style="margin:0">{t('docs.eyebrow')} {String(doc.order).padStart(2, '0')}</span>
+              <span class="tiny faint">{t('docs.updated')} {formatDate(doc.updated, lang)}</span>
+            </div>
+            <h2 class="h3" style="margin-top:8px">{doc.title}</h2>
+            <p style="margin-top:6px;color:var(--muted);font-size:13px">{doc.description}</p>
+            <span class="text-link" style="margin-top:12px">{t('actions.learnMore')} <PixelIcon name="arrowRight" size={11} /></span>
+          </a>
+        ))}
+      </div>
+    </div>
+    <aside class="docs-toc">
+      <div class="side-panel">
+        <div class="side-panel__head">{t('docs.needHelp')}</div>
+        <div class="side-panel__body">
+          <a class="btn btn--small btn--block" href="https://github.com/Kurisa-kuku/MINEWORLD-Datasets-site/discussions" target="_blank" rel="noopener noreferrer">
+            <PixelIcon name="comment" size={12} /> GitHub Discussions
+          </a>
+        </div>
+      </div>
+    </aside>
+  </div>
+</BaseLayout>

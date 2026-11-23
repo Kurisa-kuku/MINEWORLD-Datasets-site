@@ -1,0 +1,65 @@
+---
+import type { Lang } from '../config';
+import { SITE } from '../config';
+import { getT } from '../i18n';
+import PixelIcon from './PixelIcon.astro';
+
+interface Props {
+  lang: Lang;
+  slug: string;
+}
+
+const { lang, slug } = Astro.props;
+const t = await getT(lang);
+const term = `dataset:${slug}`;
+---
+<div class="giscus-shell" data-giscus data-term={term}>
+  {SITE.giscus.enabled ? (
+    <script
+      is:inline
+      async
+      src="https://giscus.app/client.js"
+      data-repo={SITE.giscus.repo}
+      data-repo-id={SITE.giscus.repoId}
+      data-category={SITE.giscus.category}
+      data-category-id={SITE.giscus.categoryId}
+      data-mapping="specific"
+      data-term={term}
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="preferred_color_scheme"
+      data-lang={lang === 'zh' ? 'zh-CN' : 'en'}
+      data-loading="lazy"
+      crossorigin="anonymous"
+    ></script>
+  ) : (
+    <div class="giscus-fallback">
+      <p class="small muted" style="margin-bottom:12px">{t('dataset.giscusMissing')}</p>
+      <a class="btn btn--small" href={SITE.discussions} target="_blank" rel="noopener noreferrer">
+        <PixelIcon name="comment" size={13} /> {t('dataset.discussOnGithub')}
+      </a>
+    </div>
+  )}
+</div>
+
+<script>
+  const shell = document.querySelector<HTMLElement>('[data-giscus]');
+  const enabled = shell?.querySelector('script[src="https://giscus.app/client.js"]');
+  if (enabled) {
+    const syncTheme = () => {
+      const iframe = document.querySelector<HTMLIFrameElement>('iframe.giscus-frame');
+      if (!iframe) return;
+      const theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+      iframe.contentWindow?.postMessage({ giscus: { setConfig: { theme } } }, 'https://giscus.app');
+    };
+
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    window.addEventListener('message', (event) => {
+      if (event.origin !== 'https://giscus.app') return;
+      if (event.data?.giscus?.discussion) syncTheme();
+    });
+  }
+</script>

@@ -1,0 +1,337 @@
+{
+  "groups": {
+    "format": { "en": "Format", "zh": "格式" },
+    "environment": { "en": "Environment", "zh": "环境" },
+    "verification": { "en": "Verification", "zh": "校验状态" },
+    "streams": { "en": "Data streams", "zh": "数据流" },
+    "license": { "en": "License", "zh": "许可证" },
+    "tasks": { "en": "Task type", "zh": "任务类型" },
+    "dimensions": { "en": "Dimension", "zh": "维度" },
+    "trainingUses": { "en": "Training use", "zh": "训练用途" },
+    "quality": { "en": "Quality", "zh": "质量标注" },
+    "accessTypes": { "en": "Access", "zh": "访问类型" },
+    "linkTypes": { "en": "Link type", "zh": "链接类型" },
+    "contributorRoles": { "en": "Contributor role", "zh": "贡献者角色" },
+    "sizeRanges": { "en": "Size", "zh": "大小" },
+    "sort": { "en": "Sort by", "zh": "排序" }
+  },
+  "format": [
+    {
+      "slug": "mwarecorder",
+      "name": { "en": "Mwarecorder", "zh": "Mwarecorder" },
+      "short": { "en": "MC", "zh": "MC" },
+      "description": {
+        "en": "Recorded with the Mwarecorder Fabric mod: aligned video, state, action and event streams.",
+        "zh": "由 Mwarecorder Fabric 模组录制：视频、状态、动作和事件流逐 tick 对齐。"
+      },
+      "tone": "grass"
+    },
+    {
+      "slug": "minecraft-replay",
+      "name": { "en": "Replay / demo", "zh": "回放 / Demo" },
+      "short": { "en": "REPLAY", "zh": "回放" },
+      "description": {
+        "en": "A Minecraft replay or demo file, optionally paired with an extracted frame archive.",
+        "zh": "Minecraft 回放或 Demo 文件，可选配抽帧归档。"
+      },
+      "tone": "sky"
+    },
+    {
+      "slug": "raw-video",
+      "name": { "en": "Raw video", "zh": "原始视频" },
+      "short": { "en": "VIDEO", "zh": "视频" },
+      "description": {
+        "en": "Screen capture or rendered gameplay video without a structured state stream.",
+        "zh": "屏幕录制或渲染的视频，不含结构化状态流。"
+      },
+      "tone": "amethyst"
+    },
+    {
+      "slug": "custom-dataset",
+      "name": { "en": "Custom dataset", "zh": "自定义数据集" },
+      "short": { "en": "CUSTOM", "zh": "自定义" },
+      "description": {
+        "en": "A ready-to-train dataset in its own format, with a documented loader.",
+        "zh": "已整理为可训练格式的数据集，需提供加载说明。"
+      },
+      "tone": "gold"
+    },
+    {
+      "slug": "other",
+      "name": { "en": "Other", "zh": "其他" },
+      "short": { "en": "OTHER", "zh": "其他" },
+      "description": {
+        "en": "Anything else that is useful to the Minecraft agent research community.",
+        "zh": "其他对 Minecraft 智能体研究有帮助的数据。"
+      },
+      "tone": "stone"
+    }
+  ],
+  "environment": [
+    { "slug": "singleplayer", "name": { "en": "Singleplayer", "zh": "单人游戏" }, "tone": "grass" },
+    { "slug": "multiplayer", "name": { "en": "Multiplayer", "zh": "多人游戏" }, "tone": "sky" },
+    { "slug": "mixed", "name": { "en": "Mixed", "zh": "混合" }, "tone": "amethyst" },
+    { "slug": "server", "name": { "en": "Dedicated server", "zh": "专用服务器" }, "tone": "gold" },
+    { "slug": "custom-map", "name": { "en": "Custom map", "zh": "自定义地图" }, "tone": "stone" }
+  ],
+  "verification": [
+    {
+      "slug": "verified",
+      "name": { "en": "Verified", "zh": "已校验" },
+      "description": {
+        "en": "Structure and tick alignment were checked with the published verifier.",
+        "zh": "已使用公开校验器检查结构与 tick 对齐。"
+      },
+      "tone": "grass"
+    },
+    {
+      "slug": "self-reported",
+      "name": { "en": "Self-reported", "zh": "上传者自检" },
+      "description": {
+        "en": "The uploader reports a successful check; the maintainers have not independently verified it.",
+        "zh": "上传者声明已通过检查，维护者尚未独立复核。"
+      },
+      "tone": "gold"
+    },
+    {
+      "slug": "unverified",
+      "name": { "en": "Unverified", "zh": "未校验" },
+      "description": {
+        "en": "No verification report is available yet.",
+        "zh": "目前没有可用的校验报告。"
+      },
+      "tone": "stone"
+    },
+    {
+      "slug": "not-applicable",
+      "name": { "en": "N/A", "zh": "不适用" },
+      "description": {
+        "en": "The format does not provide recorder-style aligned streams.",
+        "zh": "该格式不提供 Recorder 风格的对齐数据流。"
+      },
+      "tone": "stone"
+    }
+  ],
+  "streams": [
+    {
+      "slug": "video",
+      "name": { "en": "Video frames", "zh": "视频帧" },
+      "description": { "en": "JPEG/PNG frames or an MP4 video.", "zh": "JPEG/PNG 帧或 MP4 视频。" }
+    },
+    {
+      "slug": "state",
+      "name": { "en": "Player state", "zh": "玩家状态" },
+      "description": { "en": "Position, rotation, vitals, inventory, surroundings.", "zh": "位置、朝向、生命、物品栏与环境。" }
+    },
+    {
+      "slug": "action",
+      "name": { "en": "Actions", "zh": "动作" },
+      "description": { "en": "Keyboard, mouse delta and mouse buttons per tick.", "zh": "逐 tick 的键盘、鼠标位移与按键。" }
+    },
+    {
+      "slug": "events",
+      "name": { "en": "Game events", "zh": "游戏事件" },
+      "description": { "en": "Blocks, combat, containers, items and dimension changes.", "zh": "方块、战斗、容器、物品与维度变化。" }
+    }
+  ],
+  "license": [
+    {
+      "slug": "cc-by-4.0",
+      "name": { "en": "CC BY 4.0", "zh": "CC BY 4.0" },
+      "url": "https://creativecommons.org/licenses/by/4.0/",
+      "open": true,
+      "tone": "grass"
+    },
+    {
+      "slug": "cc-by-sa-4.0",
+      "name": { "en": "CC BY-SA 4.0", "zh": "CC BY-SA 4.0" },
+      "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "open": true,
+      "tone": "grass"
+    },
+    {
+      "slug": "cc0-1.0",
+      "name": { "en": "CC0 1.0", "zh": "CC0 1.0" },
+      "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "open": true,
+      "tone": "grass"
+    },
+    {
+      "slug": "mit",
+      "name": { "en": "MIT", "zh": "MIT" },
+      "url": "https://opensource.org/license/mit",
+      "open": true,
+      "tone": "sky"
+    },
+    {
+      "slug": "apache-2.0",
+      "name": { "en": "Apache-2.0", "zh": "Apache-2.0" },
+      "url": "https://www.apache.org/licenses/LICENSE-2.0",
+      "open": true,
+      "tone": "sky"
+    },
+    {
+      "slug": "odc-by-1.0",
+      "name": { "en": "ODC-By 1.0", "zh": "ODC-By 1.0" },
+      "url": "https://opendatacommons.org/licenses/by/1-0/",
+      "open": true,
+      "tone": "gold"
+    },
+    {
+      "slug": "research-only",
+      "name": { "en": "Research only", "zh": "仅限研究" },
+      "url": null,
+      "open": false,
+      "tone": "amethyst"
+    },
+    {
+      "slug": "all-rights-reserved",
+      "name": { "en": "All rights reserved", "zh": "保留所有权利" },
+      "url": null,
+      "open": false,
+      "tone": "stone"
+    },
+    {
+      "slug": "other",
+      "name": { "en": "Other / custom", "zh": "其他 / 自定义" },
+      "url": null,
+      "open": false,
+      "tone": "stone"
+    }
+  ],
+  "tasks": [
+    { "slug": "building", "name": { "en": "Building", "zh": "建造" }, "tone": "grass" },
+    { "slug": "mining", "name": { "en": "Mining", "zh": "挖掘" }, "tone": "stone" },
+    { "slug": "combat", "name": { "en": "Combat", "zh": "战斗" }, "tone": "red" },
+    { "slug": "exploration", "name": { "en": "Exploration", "zh": "探索" }, "tone": "sky" },
+    { "slug": "farming", "name": { "en": "Farming", "zh": "农业" }, "tone": "grass" },
+    { "slug": "crafting", "name": { "en": "Crafting", "zh": "合成" }, "tone": "gold" },
+    { "slug": "redstone", "name": { "en": "Redstone", "zh": "红石" }, "tone": "red" },
+    { "slug": "navigation", "name": { "en": "Navigation", "zh": "导航" }, "tone": "sky" },
+    { "slug": "survival", "name": { "en": "Survival", "zh": "生存" }, "tone": "grass" },
+    { "slug": "trading", "name": { "en": "Trading", "zh": "交易" }, "tone": "gold" },
+    { "slug": "fishing", "name": { "en": "Fishing", "zh": "钓鱼" }, "tone": "sky" },
+    { "slug": "parkour", "name": { "en": "Parkour", "zh": "跑酷" }, "tone": "amethyst" },
+    { "slug": "pvp", "name": { "en": "PvP", "zh": "PvP" }, "tone": "red" },
+    { "slug": "speedrun", "name": { "en": "Speedrun", "zh": "速通" }, "tone": "gold" }
+  ],
+  "dimensions": [
+    { "slug": "overworld", "name": { "en": "Overworld", "zh": "主世界" }, "color": "#65b94a" },
+    { "slug": "nether", "name": { "en": "The Nether", "zh": "下界" }, "color": "#d9533d" },
+    { "slug": "end", "name": { "en": "The End", "zh": "末地" }, "color": "#bda6e8" },
+    { "slug": "mixed", "name": { "en": "Mixed dimensions", "zh": "跨维度" }, "color": "#b68cff" },
+    { "slug": "superflat", "name": { "en": "Superflat / custom", "zh": "超平坦 / 自定义" }, "color": "#8b948e" }
+  ],
+  "trainingUses": [
+    { "slug": "world-model", "name": { "en": "World model", "zh": "世界模型" }, "tone": "amethyst" },
+    { "slug": "imitation-learning", "name": { "en": "Imitation learning", "zh": "模仿学习" }, "tone": "grass" },
+    { "slug": "offline-rl", "name": { "en": "Offline RL", "zh": "离线强化学习" }, "tone": "red" },
+    { "slug": "video-prediction", "name": { "en": "Video prediction", "zh": "视频预测" }, "tone": "sky" },
+    { "slug": "agent-benchmark", "name": { "en": "Agent benchmark", "zh": "智能体基准" }, "tone": "gold" },
+    { "slug": "representation-learning", "name": { "en": "Representation learning", "zh": "表征学习" }, "tone": "amethyst" },
+    { "slug": "navigation", "name": { "en": "Navigation research", "zh": "导航研究" }, "tone": "sky" },
+    { "slug": "planning", "name": { "en": "Planning", "zh": "规划" }, "tone": "gold" }
+  ],
+  "quality": [
+    {
+      "slug": "strict-verified",
+      "name": { "en": "Strictly verified", "zh": "严格校验" },
+      "description": { "en": "Passes the strict verifier with no errors.", "zh": "严格校验器零错误通过。" },
+      "tone": "grass"
+    },
+    {
+      "slug": "alignment-checked",
+      "name": { "en": "Alignment checked", "zh": "对齐已验证" },
+      "description": { "en": "Frame/state/action alignment has been spot-checked.", "zh": "帧/状态/动作对齐已抽查。" },
+      "tone": "sky"
+    },
+    {
+      "slug": "community-reviewed",
+      "name": { "en": "Community reviewed", "zh": "社区复核" },
+      "description": { "en": "At least one community member reviewed the data.", "zh": "至少一位社区成员复核过数据。" },
+      "tone": "gold"
+    },
+    {
+      "slug": "clean-controls",
+      "name": { "en": "Clean controls", "zh": "干净输入" },
+      "description": { "en": "Captured from real human input without scripted agents.", "zh": "来自真实人类输入，未使用脚本智能体。" },
+      "tone": "grass"
+    },
+    {
+      "slug": "redacted",
+      "name": { "en": "Privacy redacted", "zh": "隐私已脱敏" },
+      "description": { "en": "Usernames, skins or chat have been removed.", "zh": "玩家名、皮肤或聊天已移除。" },
+      "tone": "amethyst"
+    },
+    {
+      "slug": "needs-review",
+      "name": { "en": "Needs review", "zh": "需要复核" },
+      "description": { "en": "Known caveats; inspect before training.", "zh": "存在已知问题，训练前请检查。" },
+      "tone": "red"
+    },
+    {
+      "slug": "experimental",
+      "name": { "en": "Experimental", "zh": "实验性" },
+      "description": { "en": "Early or incomplete capture, provided as-is.", "zh": "早期或不完整采集，按原样提供。" },
+      "tone": "stone"
+    }
+  ],
+  "accessTypes": [
+    {
+      "slug": "open",
+      "name": { "en": "Open download", "zh": "公开下载" },
+      "description": { "en": "Anyone with the link can download.", "zh": "任何持有链接的人都可以下载。" },
+      "tone": "grass"
+    },
+    {
+      "slug": "request",
+      "name": { "en": "Request access", "zh": "申请访问" },
+      "description": { "en": "Ask the contributor for a download link.", "zh": "需要向贡献者申请下载链接。" },
+      "tone": "gold"
+    },
+    {
+      "slug": "restricted",
+      "name": { "en": "Restricted", "zh": "受限" },
+      "description": { "en": "Preview only, or access under specific conditions.", "zh": "仅提供预览，或需满足特定条件。" },
+      "tone": "red"
+    }
+  ],
+  "linkTypes": [
+    { "slug": "download", "name": { "en": "Download", "zh": "下载" } },
+    { "slug": "mirror", "name": { "en": "Mirror", "zh": "镜像" } },
+    { "slug": "request", "name": { "en": "Request access", "zh": "申请访问" } },
+    { "slug": "sample", "name": { "en": "Sample", "zh": "样例" } },
+    { "slug": "homepage", "name": { "en": "Project page", "zh": "项目主页" } },
+    { "slug": "paper", "name": { "en": "Paper", "zh": "论文" } },
+    { "slug": "benchmark", "name": { "en": "Benchmark", "zh": "基准" } }
+  ],
+  "contributorRoles": [
+    { "slug": "uploader", "name": { "en": "Uploader", "zh": "上传者" } },
+    { "slug": "curator", "name": { "en": "Curator", "zh": "整理者" } },
+    { "slug": "annotator", "name": { "en": "Annotator", "zh": "标注者" } },
+    { "slug": "maintainer", "name": { "en": "Maintainer", "zh": "维护者" } }
+  ],
+  "sizeRanges": [
+    { "slug": "under-1gb", "name": { "en": "< 1 GB", "zh": "< 1 GB" }, "minBytes": 0, "maxBytes": 1073741824 },
+    {
+      "slug": "1-10gb",
+      "name": { "en": "1–10 GB", "zh": "1–10 GB" },
+      "minBytes": 1073741824,
+      "maxBytes": 10737418240
+    },
+    {
+      "slug": "10-50gb",
+      "name": { "en": "10–50 GB", "zh": "10–50 GB" },
+      "minBytes": 10737418240,
+      "maxBytes": 53687091200
+    },
+    { "slug": "50gb-plus", "name": { "en": "50 GB+", "zh": "50 GB+" }, "minBytes": 53687091200, "maxBytes": null }
+  ],
+  "sort": [
+    { "slug": "latest", "name": { "en": "Newest", "zh": "最新" } },
+    { "slug": "updated", "name": { "en": "Recently updated", "zh": "最近更新" } },
+    { "slug": "likes", "name": { "en": "Most liked", "zh": "最多点赞" } },
+    { "slug": "comments", "name": { "en": "Most discussed", "zh": "最多评论" } },
+    { "slug": "size", "name": { "en": "Largest", "zh": "体积" } }
+  ]
+}

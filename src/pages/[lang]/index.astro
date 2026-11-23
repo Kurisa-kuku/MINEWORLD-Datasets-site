@@ -1,0 +1,248 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Hero from '../../components/Hero.astro';
+import DatasetCard from '../../components/DatasetCard.astro';
+import PixelIcon from '../../components/PixelIcon.astro';
+import type { Lang } from '../../config';
+import { SITE, localePath, withBase } from '../../config';
+import { getT } from '../../i18n';
+import {
+  getAllDatasets,
+  getFeaturedDatasets,
+  getLatestDatasets,
+  getLibraryTotals,
+  getTagDefinitions,
+  getTagName,
+} from '../../lib/data';
+import { formatInteger } from '../../lib/format';
+
+export function getStaticPaths() {
+  return [{ params: { lang: 'en' } }, { params: { lang: 'zh' } }];
+}
+
+const lang = Astro.params.lang as Lang;
+const t = await getT(lang);
+const totals = getLibraryTotals();
+const featured = getFeaturedDatasets(lang, 3);
+const latest = getLatestDatasets(lang, 6);
+const all = getAllDatasets(lang);
+const trainingUses = getTagDefinitions('trainingUses')
+  .map((tag) => ({
+    ...tag,
+    count: all.filter((dataset) => dataset.tags.trainingUses.includes(tag.slug as never)).length,
+  }))
+  .filter((tag) => tag.count > 0)
+  .sort((a, b) => b.count - a.count);
+
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: t('site.name'),
+  description: t('site.description'),
+  url: new URL(withBase(`/${lang}/`), Astro.site ?? 'https://kurisa-kuku.github.io').toString(),
+  inLanguage: lang === 'zh' ? 'zh-CN' : 'en',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${new URL(localePath(lang, 'datasets'), Astro.site ?? 'https://kurisa-kuku.github.io')}?q={search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
+};
+
+const latestHref = localePath(lang, 'datasets');
+const trainingUseLabel = (slug: string) => getTagName('trainingUses', slug, lang);
+---
+<BaseLayout
+  lang={lang}
+  title={t('site.name')}
+  description={t('site.description')}
+>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(websiteJsonLd)} />
+
+  <Hero lang={lang} totals={totals} />
+
+  {all.length === 0 && (
+    <section class="section" aria-labelledby="empty-catalog-title">
+      <div class="container">
+        <div class="empty-catalog-panel">
+          <div class="empty-catalog-panel__mark" aria-hidden="true">
+            <PixelIcon name="cube" size={40} />
+          </div>
+          <div class="eyebrow">{t('home.emptyEyebrow')}</div>
+          <h2 class="h2" id="empty-catalog-title">{t('home.emptyTitle')}</h2>
+          <p class="lead empty-catalog-panel__desc">{t('home.emptyDesc')}</p>
+          <div class="btn-row" style="justify-content:center;margin-top:24px">
+            <a class="btn btn--primary" href={localePath(lang, 'submit')}>
+              <PixelIcon name="upload" size={14} /> {t('home.ctaSubmit')}
+            </a>
+            <a class="btn" href={localePath(lang, 'docs')}>
+              <PixelIcon name="book" size={14} /> {t('docs.title')}
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="section" id="featured" aria-labelledby="featured-title" hidden={featured.length === 0}>
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="section-head__copy">
+          <div class="eyebrow">{t('home.featuredEyebrow')}</div>
+          <h2 class="h2" id="featured-title">{t('home.featuredTitle')}</h2>
+          <p class="section-head__desc">{t('home.featuredDesc')}</p>
+        </div>
+        <a class="btn btn--small section-head__action" href={latestHref}>
+          {t('actions.viewAll')} <PixelIcon name="arrowRight" size={12} />
+        </a>
+      </div>
+
+      <div class="dataset-grid reveal">
+        {featured.map((dataset) => <DatasetCard dataset={dataset} lang={lang} />)}
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--surface" aria-labelledby="latest-title" hidden={latest.length === 0}>
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="section-head__copy">
+          <div class="eyebrow">{t('home.latestEyebrow')}</div>
+          <h2 class="h2" id="latest-title">{t('home.latestTitle')}</h2>
+          <p class="section-head__desc">{t('home.latestDesc')}</p>
+        </div>
+        <a class="btn btn--small section-head__action" href={`${latestHref}?sort=latest`}>
+          {t('actions.browse')} <PixelIcon name="arrowRight" size={12} />
+        </a>
+      </div>
+
+      <div class="dataset-grid reveal">
+        {latest.map((dataset, index) => <DatasetCard dataset={dataset} lang={lang} eager={index < 3} />)}
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="how-title">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="section-head__copy">
+          <div class="eyebrow">{t('home.howEyebrow')}</div>
+          <h2 class="h2" id="how-title">{t('home.howTitle')}</h2>
+          <p class="section-head__desc">{t('home.howDesc')}</p>
+        </div>
+      </div>
+
+      <div class="how-grid">
+        <article class="how-card reveal">
+          <h3>{t('home.how1Title')}</h3>
+          <p>{t('home.how1Desc')}</p>
+          <div class="cluster" style="margin-top:14px">
+            <span class="badge tone-grass">video</span>
+            <span class="badge tone-sky">state</span>
+            <span class="badge tone-gold">action</span>
+            <span class="badge tone-amethyst">events</span>
+          </div>
+        </article>
+        <article class="how-card reveal">
+          <h3>{t('home.how2Title')}</h3>
+          <p>{t('home.how2Desc')}</p>
+          <div class="cluster" style="margin-top:14px">
+            <span class="badge">Issue Form</span>
+            <span class="badge">JSON Schema</span>
+            <span class="badge">WebP</span>
+          </div>
+        </article>
+        <article class="how-card reveal">
+          <h3>{t('home.how3Title')}</h3>
+          <p>{t('home.how3Desc')}</p>
+          <div class="cluster" style="margin-top:14px">
+            <span class="badge tone-grass">{t('home.featuredBadge')}</span>
+            <span class="badge">GitHub PR</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--surface" aria-labelledby="directions-title" hidden={trainingUses.length === 0}>
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="section-head__copy">
+          <div class="eyebrow">{t('home.tagsEyebrow')}</div>
+          <h2 class="h2" id="directions-title">{t('home.tagsTitle')}</h2>
+          <p class="section-head__desc">{t('home.tagsDesc')}</p>
+        </div>
+      </div>
+      <div class="direction-grid reveal">
+        {trainingUses.map((tag) => (
+          <a class="direction-chip" href={`${latestHref}?use=${tag.slug}`}>
+            <PixelIcon name="target" size={13} />
+            {trainingUseLabel(tag.slug)}
+            <span class="direction-chip__count">{formatInteger(tag.count, lang)}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="recorder-section" aria-labelledby="recorder-title">
+    <div class="container recorder-layout">
+      <div class="recorder-copy reveal">
+        <div class="eyebrow">{t('home.mwarecorderEyebrow')}</div>
+        <h2 id="recorder-title">{t('home.mwarecorderTitle')}</h2>
+        <p>{t('home.mwarecorderDesc')}</p>
+        <div class="recorder-bullets">
+          <div class="recorder-bullet"><PixelIcon name="check" size={13} /> {t('home.mwarecorderBullet1')}</div>
+          <div class="recorder-bullet"><PixelIcon name="check" size={13} /> {t('home.mwarecorderBullet2')}</div>
+          <div class="recorder-bullet"><PixelIcon name="check" size={13} /> {t('home.mwarecorderBullet3')}</div>
+        </div>
+        <div class="recorder-actions">
+          <a class="btn btn--primary" href={SITE.recorderRepo} target="_blank" rel="noopener noreferrer">
+            <PixelIcon name="github" size={14} /> {t('home.mwarecorderCta')}
+          </a>
+          <a class="btn" href={localePath(lang, 'docs')} style="--btn-bg:transparent;--btn-ink:var(--surface);--btn-border:var(--stone)">
+            {t('footer.docs')} <PixelIcon name="arrowRight" size={12} />
+          </a>
+        </div>
+      </div>
+
+      <div class="recorder-terminal reveal" aria-hidden="true">
+        <div class="recorder-terminal__bar">
+          <span class="recorder-terminal__dot"></span>
+          <span class="recorder-terminal__title">mwarecorder / episode_20261123_0912</span>
+        </div>
+        <pre><span class="dim">$</span> ./gradlew runClient
+<span class="dim">[ MW Recorder ]</span> fabric client 1.21.7
+<span class="accent">REC</span>  sample_tick  004182
+     frames      2,091  <span class="dim">/ 2  skipped</span>
+     state       4,182
+     actions     4,182
+     events        134
+     dim         overworld <span class="dim">→ nether</span>
+<span class="gold">✓</span> summary.json written
+<span class="dim">$</span> python verify_episode.py run/mwarecorder_data --strict
+<span class="accent">PASS</span> 1 episode · 0 errors
+<span class="gold">→</span> ready for <span class="accent">dataset/observations.npy</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="community-title">
+    <div class="container">
+      <div class="community-cta reveal">
+        <div>
+          <div class="eyebrow">{t('home.communityEyebrow')}</div>
+          <h2 id="community-title">{t('home.communityTitle')}</h2>
+          <p>{t('home.communityDesc')}</p>
+        </div>
+        <div class="btn-row">
+          <a class="btn btn--accent" href={localePath(lang, 'docs')}>
+            <PixelIcon name="book" size={14} /> {t('home.communityCta')}
+          </a>
+          <a class="btn" href={SITE.github} target="_blank" rel="noopener noreferrer">
+            <PixelIcon name="github" size={14} /> GitHub
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

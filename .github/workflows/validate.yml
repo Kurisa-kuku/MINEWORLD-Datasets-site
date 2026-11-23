@@ -1,0 +1,58 @@
+name: Validate catalog
+
+on:
+  pull_request:
+    paths:
+      - 'data/**'
+      - 'docs/**'
+      - 'public/**'
+      - 'schemas/**'
+      - 'scripts/**'
+      - 'src/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'astro.config.mjs'
+  push:
+    branches: [main]
+    paths:
+      - 'data/**'
+      - 'schemas/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      PUBLIC_REPO_SLUG: ${{ github.repository }}
+      PUBLIC_RECORDER_REPO: ${{ vars.MW_RECORDER_REPO || 'Kurisa-kuku/MineWorld-Agent-Recorder' }}
+      PUBLIC_GITHUB_OAUTH_CLIENT_ID: ${{ vars.PUBLIC_GITHUB_OAUTH_CLIENT_ID }}
+      PUBLIC_GITHUB_AUTH_BASE: ${{ vars.PUBLIC_GITHUB_AUTH_BASE }}
+      PUBLIC_ADMIN_LOGINS: ${{ vars.PUBLIC_ADMIN_LOGINS || 'Kurisa-kuku' }}
+      PUBLIC_GISCUS_REPO_ID: ${{ vars.PUBLIC_GISCUS_REPO_ID }}
+      PUBLIC_GISCUS_CATEGORY_ID: ${{ vars.PUBLIC_GISCUS_CATEGORY_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate JSON and covers
+        run: pnpm validate:data
+
+      - name: Type-check and build
+        run: pnpm build

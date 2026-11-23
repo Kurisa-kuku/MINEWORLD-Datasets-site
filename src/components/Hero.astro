@@ -1,0 +1,73 @@
+---
+import type { Lang } from '../config';
+import { SITE, localePath } from '../config';
+import { getT } from '../i18n';
+import { formatBytes, formatInteger, formatNumber } from '../lib/format';
+import type { LibraryTotals } from '../lib/data';
+import PixelIcon from './PixelIcon.astro';
+
+interface Props {
+  lang: Lang;
+  totals: LibraryTotals;
+}
+
+const { lang, totals } = Astro.props;
+const t = await getT(lang);
+const hours = totals.durationSeconds / 3600;
+---
+<section class="hero" aria-labelledby="hero-title">
+  <span class="hero-cloud hero-cloud--one" aria-hidden="true"></span>
+  <span class="hero-cloud hero-cloud--two" aria-hidden="true"></span>
+  <span class="hero-cloud hero-cloud--three" aria-hidden="true"></span>
+
+  <div class="container hero-inner">
+    <div class="hero-copy">
+      <div class="eyebrow">{t('home.eyebrow')}</div>
+      <h1 class="hero-title" id="hero-title">
+        {t('home.titleLead')}
+        <span class="hero-title__accent">{t('home.titleAccent')}</span>
+      </h1>
+      <p class="hero-desc">{t('home.description')}</p>
+      <div class="hero-actions">
+        <a class="btn btn--primary btn--large" href={localePath(lang, 'datasets')}>
+          <PixelIcon name="layout" size={15} />
+          {t('home.ctaBrowse')}
+        </a>
+        <a class="btn btn--accent btn--large" href={localePath(lang, 'submit')}>
+          <PixelIcon name="upload" size={15} />
+          {t('home.ctaSubmit')}
+        </a>
+        <a class="btn btn--ghost" href={SITE.recorderRepo} target="_blank" rel="noopener noreferrer">
+          <PixelIcon name="pickaxe" size={14} />
+          {t('home.ctaRecorder')}
+        </a>
+      </div>
+      <p class="hero-note">
+        <PixelIcon name="github" size={12} />
+        GitHub-native · {t('site.tagline')}
+      </p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="hero-stats" aria-label={t('home.eyebrow')}>
+      <div class="hero-stat">
+        <div class="hero-stat__value">{formatInteger(totals.datasets, lang)}</div>
+        <div class="hero-stat__label">{t('home.statDatasets')}</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat__value">{formatInteger(totals.episodes, lang)}</div>
+        <div class="hero-stat__label">{t('home.statEpisodes')}</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat__value">{formatNumber(hours, lang, { maximumFractionDigits: 1 })}</div>
+        <div class="hero-stat__label">{t('home.statHours')}</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat__value">{formatBytes(totals.bytes, lang)}</div>
+        <div class="hero-stat__label">{t('home.statSize')}</div>
+      </div>
+    </div>
+  </div>
+  <div style="height:16px" aria-hidden="true"></div>
+</section>

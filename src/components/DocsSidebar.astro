@@ -1,0 +1,46 @@
+---
+import type { Lang } from '../config';
+import { withBase } from '../config';
+import { getT } from '../i18n';
+import PixelIcon from './PixelIcon.astro';
+
+interface DocNavItem {
+  slug: string;
+  title: string;
+  description: string;
+  updated: string;
+  order: number;
+}
+
+interface Props {
+  lang: Lang;
+  docs: DocNavItem[];
+  currentSlug: string;
+}
+
+const { lang, docs, currentSlug } = Astro.props;
+const t = await getT(lang);
+---
+<aside class="docs-sidebar">
+  <nav class="docs-nav" aria-label={t('docs.title')}>
+    <div class="docs-nav__head">
+      <PixelIcon name="book" size={13} /> {t('docs.title')}
+    </div>
+    <div class="docs-nav__list">
+      <a class="docs-nav__link" href={withBase(`/${lang}/docs/`)} aria-current={currentSlug === '' ? 'page' : undefined}>
+        <span class="docs-nav__index">00</span>
+        {t('docs.back')}
+      </a>
+      {docs.map((doc, index) => (
+        <a
+          class="docs-nav__link"
+          href={withBase(`/${lang}/docs/${doc.slug}/`)}
+          aria-current={currentSlug === doc.slug ? 'page' : undefined}
+        >
+          <span class="docs-nav__index">{String(index + 1).padStart(2, '0')}</span>
+          {doc.title}
+        </a>
+      ))}
+    </div>
+  </nav>
+</aside>

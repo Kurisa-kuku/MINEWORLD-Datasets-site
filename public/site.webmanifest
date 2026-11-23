@@ -1,0 +1,18 @@
+{
+  "name": "MineWorld Datasets",
+  "short_name": "MW Datasets",
+  "description": "A community catalog of Minecraft datasets for agent research.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#e8f5fb",
+  "theme_color": "#65bd4d",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,155 @@
+---
+import type { Lang } from '../config';
+import { getT } from '../i18n';
+import { getTagDefinitions, getTagName } from '../lib/data';
+import type { LibraryFacets } from '../lib/data';
+import PixelIcon from './PixelIcon.astro';
+
+interface Props {
+  lang: Lang;
+  facets: LibraryFacets;
+  counts: Record<string, Record<string, number>>;
+}
+
+const { lang, facets, counts } = Astro.props;
+const t = await getT(lang);
+
+type Option = { value: string; label: string; count: number };
+type Group = {
+  key: string;
+  label: string;
+  options: Option[];
+  open?: boolean;
+  mode?: 'checkbox' | 'toggle';
+};
+
+const countGroupFor: Record<string, string> = {
+  format: 'format',
+  environment: 'env',
+  verification: 'verify',
+  tasks: 'task',
+  dimensions: 'dim',
+  trainingUses: 'use',
+  quality: 'quality',
+  license: 'license',
+  accessTypes: 'access',
+};
+
+const tagOptions = (group: string, available: string[]): Option[] => {
+  const countGroup = countGroupFor[group] ?? group;
+  return getTagDefinitions(group)
+    .filter((definition) => available.includes(definition.slug))
+    .map((definition) => ({
+      value: definition.slug,
+      label: getTagName(group, definition.slug, lang),
+      count: counts[countGroup]?.[definition.slug] ?? 0,
+    }));
+};
+
+const groups: Group[] = [
+  { key: 'format', label: t('filter.format'), options: tagOptions('format', facets.formats), open: true },
+  {
+    key: 'mc',
+    label: t('filter.mc'),
+    options: facets.minecraftVersions.map((version) => ({
+      value: version,
+      label: version,
+      count: counts.mc?.[version] ?? 0,
+    })),
+  },
+  {
+    key: 'mod',
+    label: t('filter.mod'),
+    options: facets.modVersions.map((version) => ({
+      value: version,
+      label: version,
+      count: counts.mod?.[version] ?? 0,
+    })),
+  },
+  { key: 'env', label: t('filter.env'), options: tagOptions('environment', facets.environments) },
+  {
+    key: 'verify',
+    label: t('filter.verify'),
+    options: tagOptions('verification', facets.verifications),
+    open: true,
+  },
+  { key: 'task', label: t('filter.task'), options: tagOptions('tasks', facets.tasks), open: true },
+  { key: 'dim', label: t('filter.dim'), options: tagOptions('dimensions', facets.dimensions) },
+  { key: 'use', label: t('filter.use'), options: tagOptions('trainingUses', facets.trainingUses) },
+  { key: 'quality', label: t('filter.quality'), options: tagOptions('quality', facets.qualities) },
+  { key: 'license', label: t('filter.license'), options: tagOptions('license', facets.licenses) },
+  {
+    key: 'size',
+    label: t('filter.size'),
+    options: getTagDefinitions('sizeRanges').map((range) => ({
+      value: range.slug,
+      label: getTagName('sizeRanges', range.slug, lang),
+      count: counts.size?.[range.slug] ?? 0,
+    })),
+    open: true,
+  },
+  {
+    key: 'media',
+    label: t('filter.video'),
+    options: [
+      { value: 'video', label: t('filter.hasVideo'), count: counts.media?.video ?? 0 },
+      { value: 'events', label: t('filter.hasEvents'), count: counts.media?.events ?? 0 },
+    ],
+    mode: 'toggle',
+    open: true,
+  },
+  { key: 'access', label: t('filter.access'), options: tagOptions('accessTypes', facets.accessTypes), open: true },
+];
+---
+<aside class="filter-sidebar" id="library-filters" aria-label={t('library.filterTitle')}>
+  <form class="filter-panel" id="filter-form" method="get" action="">
+    <div class="filter-panel__head">
+      <div class="filter-panel__title">
+        <PixelIcon name="filter" size={14} />
+        {t('library.filterTitle')}
+      </div>
+      <button type="button" class="icon-toggle filter-close js-close-filters" aria-label={t('actions.close')}>
+        <PixelIcon name="close" size={13} />
+      </button>
+    </div>
+    <p class="filter-panel__hint">{t('library.filterHint')}</p>
+
+    {groups.map((group) => (
+      <details class="filter-group" data-filter-group={group.key} open={group.open}>
+        <summary>
+          <span>
+            {group.label}
+            <span class="filter-group__selected" data-group-count={group.key} hidden></span>
+          </span>
+        </summary>
+        <div class="filter-group__body">
+          {group.options.length === 0 && <span class="tiny faint">{t('common.none')}</span>}
+          {group.options.map((option) => (
+            <label class="filter-option">
+              <input
+                type="checkbox"
+                name={group.mode === 'toggle' ? option.value : group.key}
+                value={group.mode === 'toggle' ? '1' : option.value}
+                data-filter-group={group.mode === 'toggle' ? option.value : group.key}
+                data-filter-value={group.mode === 'toggle' ? '1' : option.value}
+                data-filter-label={option.label}
+              />
+              <span class="filter-option__label">{option.label}</span>
+              <span class="filter-option__count">{option.count}</span>
+            </label>
+          ))}
+        </div>
+      </details>
+    ))}
+
+    <div class="filter-clear">
+      <button type="button" class="btn btn--small btn--ghost js-clear-filters">
+        <PixelIcon name="refresh" size={12} /> {t('actions.clearAll')}
+      </button>
+    </div>
+  </form>
+</aside>
+
+<script>
+  import '../scripts/library';
+</script>

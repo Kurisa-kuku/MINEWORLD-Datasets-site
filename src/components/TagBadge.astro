@@ -1,0 +1,34 @@
+---
+import type { Lang } from '../config';
+import { getTagName, getTag } from '../lib/data';
+
+interface Props {
+  group: string;
+  slug: string;
+  lang: Lang;
+  variant?: 'badge' | 'tag';
+  showDot?: boolean;
+  class?: string;
+  href?: string;
+}
+
+const { group, slug, lang, variant = 'tag', showDot = true, class: className = '', href } = Astro.props;
+const definition = getTag(group, slug);
+const label = getTagName(group, slug, lang);
+const tone = definition?.tone ?? 'stone';
+const isBadge = variant === 'badge';
+const tag = href ? 'a' : 'span';
+const Tag = tag;
+const style = group === 'dimensions' && definition?.color ? `--tag-color:${definition.color}` : undefined;
+---
+{isBadge ? (
+  <span class={`badge tone-${tone} ${className}`} style={style}>
+    {showDot && <span class="badge-dot" aria-hidden="true"></span>}
+    {label}
+  </span>
+) : (
+  <Tag class={`tag ${className}`} style={style} href={href}>
+    {!showDot && <span class="sr-only">·</span>}
+    {label}
+  </Tag>
+)}

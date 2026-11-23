@@ -1,0 +1,110 @@
+---
+import '@fontsource/fusion-pixel-12px-proportional-sc/400.css';
+import '@fontsource/press-start-2p/400.css';
+import '../styles/global.css';
+import type { Lang } from '../config';
+import { BASE, CLIENT_CONFIG, withBase } from '../config';
+import { getT } from '../i18n';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description?: string;
+  image?: string;
+  noindex?: boolean;
+  bodyClass?: string;
+  ogType?: 'website' | 'article';
+}
+
+const {
+  lang,
+  title,
+  description = '',
+  image = '/og.png',
+  noindex = false,
+  bodyClass = '',
+  ogType = 'website',
+} = Astro.props;
+
+const t = await getT(lang);
+const siteName = t('site.name');
+const fullTitle = title === siteName ? title : `${title} — ${siteName}`;
+const metaDescription = description || t('site.description');
+
+let localeFreePath = Astro.url.pathname;
+if (BASE && localeFreePath.startsWith(BASE)) localeFreePath = localeFreePath.slice(BASE.length) || '/';
+const isNotFoundPath = /^\/404(?:\/|\.html)?$/.test(localeFreePath);
+const otherLang: Lang = lang === 'en' ? 'zh' : 'en';
+const otherLangPath = isNotFoundPath
+  ? withBase(`/${otherLang}/`)
+  : withBase(`/${otherLang}${localeFreePath.replace(/^\/(en|zh)(?=\/|$)/, '') || '/'}`);
+const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://kurisa-kuku.github.io');
+const alternate = new URL(otherLangPath, Astro.site ?? 'https://kurisa-kuku.github.io');
+const ogImage = image.startsWith('http') ? image : new URL(withBase(image), Astro.site ?? 'https://kurisa-kuku.github.io').toString();
+const htmlLang = lang === 'zh' ? 'zh-CN' : 'en';
+const clientConfig = { ...CLIENT_CONFIG, lang };
+---
+<!doctype html>
+<html lang={htmlLang} dir="ltr" data-theme="light" data-base={BASE} id="top">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={metaDescription} />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#b7e4fa" />
+    <meta name="color-scheme" content="light dark" />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="en" href={lang === 'en' ? canonical : alternate} />
+    <link rel="alternate" hreflang="zh-CN" href={lang === 'zh' ? canonical : alternate} />
+    <link rel="alternate" hreflang="x-default" href={lang === 'en' ? canonical : alternate} />
+    <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
+    <link rel="manifest" href={withBase('/site.webmanifest')} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content={lang === 'zh' ? 'zh_CN' : 'en_US'} />
+    <meta property="og:locale:alternate" content={lang === 'zh' ? 'en_US' : 'zh_CN'} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={metaDescription} />
+    <meta name="twitter:image" content={ogImage} />
+    <script is:inline>
+      (() => {
+        try {
+          const stored = localStorage.getItem('mw-theme');
+          const theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+          document.documentElement.dataset.theme = theme;
+          document.documentElement.classList.add('js');
+        } catch {
+          document.documentElement.classList.add('js');
+        }
+      })();
+    </script>
+    <script is:inline define:vars={{ clientConfig }}>
+      window.MW = window.MW || {};
+      window.MW.config = clientConfig;
+    </script>
+    <slot name="head" />
+  </head>
+  <body class={bodyClass}>
+    <a class="skip-link" href="#main">{t('nav.skip')}</a>
+    <Header lang={lang} />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

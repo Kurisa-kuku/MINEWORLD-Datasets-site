@@ -1,0 +1,152 @@
+---
+import type { Lang } from '../config';
+import { BASE, SITE, localePath, withBase } from '../config';
+import { getT } from '../i18n';
+import AuthWidget from './AuthWidget.astro';
+import PixelIcon from './PixelIcon.astro';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = await getT(lang);
+
+const pathname = Astro.url.pathname;
+let localeFreePath = pathname;
+if (BASE && localeFreePath.startsWith(BASE)) localeFreePath = localeFreePath.slice(BASE.length) || '/';
+const isNotFoundPath = /^\/404(?:\/|\.html)?$/.test(localeFreePath);
+const langFreePath = isNotFoundPath
+  ? '/'
+  : localeFreePath.replace(/^\/(en|zh)(?=\/|$)/, '') || '/';
+const otherLang = lang === 'en' ? 'zh' : 'en';
+const otherLangPath = withBase(`/${otherLang}${langFreePath === '/' ? '/' : langFreePath}`);
+
+const nav = [
+  { key: 'nav.datasets', path: '/datasets/', href: localePath(lang, 'datasets'), match: /^\/datasets/ },
+  { key: 'nav.submit', path: '/submit/', href: localePath(lang, 'submit'), match: /^\/submit/ },
+  { key: 'nav.docs', path: '/docs/', href: localePath(lang, 'docs'), match: /^\/docs/ },
+  { key: 'nav.contributors', path: '/contributors/', href: localePath(lang, 'contributors'), match: /^\/contributors/ },
+];
+
+function isActive(match: RegExp): boolean {
+  return match.test(langFreePath);
+}
+---
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href={localePath(lang)} aria-label={t('nav.home')}>
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-copy">
+        <span class="brand-name">MINEWORLD</span>
+        <span class="brand-sub">Datasets</span>
+      </span>
+    </a>
+
+    <nav class="main-nav" aria-label={t('nav.menu')}>
+      <ul class="nav-list">
+        {nav.map((item) => (
+          <li>
+            <a class="nav-link" href={item.href} aria-current={isActive(item.match) ? 'page' : undefined}>
+              {t(item.key)}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <div class="header-actions">
+      <a
+        class="btn btn--small btn--gold recorder-btn"
+        href={SITE.recorderRepo}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={t('nav.recorder')}
+      >
+        <PixelIcon name="pickaxe" size={13} />
+        <span class="btn-label">{t('nav.recorder')}</span>
+      </a>
+      <a
+        class="icon-toggle"
+        href={SITE.github}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={t('nav.github')}
+        title={t('nav.github')}
+      >
+        <PixelIcon name="github" size={15} />
+      </a>
+      <button
+        type="button"
+        class="icon-toggle js-theme-toggle"
+        aria-label={t('theme.light')}
+        title={t('theme.toggle')}
+        data-label-light={t('theme.light')}
+        data-label-dark={t('theme.dark')}
+      >
+        <span class="theme-icon theme-icon--sun"><PixelIcon name="sun" size={15} /></span>
+        <span class="theme-icon theme-icon--moon"><PixelIcon name="moon" size={15} /></span>
+      </button>
+      <a
+        class="icon-toggle lang-toggle js-lang-link"
+        href={otherLangPath}
+        hreflang={otherLang}
+        aria-label={t('lang.switch')}
+        title={t('lang.switch')}
+      >
+        {otherLang === 'zh' ? '中' : 'EN'}
+      </a>
+      <AuthWidget lang={lang} />
+      <button
+        type="button"
+        class="icon-toggle mobile-menu-btn js-mobile-menu"
+        aria-label={t('nav.menu')}
+        aria-controls="mobile-nav"
+        aria-expanded="false"
+      >
+        <PixelIcon name="menu" size={15} />
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="mobile-nav" id="mobile-nav">
+  <div class="container">
+    <nav aria-label={t('nav.menu')}>
+      <ul class="mobile-nav__list">
+        {nav.map((item) => (
+          <li>
+            <a class="mobile-nav__link" href={item.href} aria-current={isActive(item.match) ? 'page' : undefined}>
+              {t(item.key)}
+              <PixelIcon name="chevronRight" size={12} />
+            </a>
+          </li>
+        ))}
+        <li>
+          <a class="mobile-nav__link" href={localePath(lang, 'admin')}>
+            {t('nav.admin')}
+            <PixelIcon name="settings" size={12} />
+          </a>
+        </li>
+      </ul>
+    </nav>
+    <div class="mobile-nav__actions">
+      <a class="btn btn--small btn--gold" href={SITE.recorderRepo} target="_blank" rel="noopener noreferrer">
+        <PixelIcon name="pickaxe" size={13} /> {t('nav.recorder')}
+      </a>
+      <a class="btn btn--small js-lang-link" href={otherLangPath} hreflang={otherLang}>
+        {otherLang === 'zh' ? t('lang.zh') : t('lang.en')}
+      </a>
+      <a class="btn btn--small" href={SITE.github} target="_blank" rel="noopener noreferrer">
+        <PixelIcon name="github" size={13} /> GitHub
+      </a>
+      <a class="btn btn--small" href={localePath(lang, 'docs')}>
+        <PixelIcon name="book" size={13} /> {t('nav.docs')}
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  import '../scripts/chrome';
+</script>

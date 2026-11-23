@@ -1,0 +1,97 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PixelIcon from '../../components/PixelIcon.astro';
+import type { Lang } from '../../config';
+import { SITE, withBase } from '../../config';
+import { getT } from '../../i18n';
+
+export function getStaticPaths() {
+  return [{ params: { lang: 'en' } }, { params: { lang: 'zh' } }];
+}
+
+const lang = Astro.params.lang as Lang;
+const t = await getT(lang);
+---
+<BaseLayout lang={lang} title={t('admin.title')} description={t('admin.description')} noindex>
+  <header class="page-hero">
+    <div class="container page-hero__inner">
+      <div class="page-hero__copy">
+        <div class="eyebrow">{t('admin.eyebrow')}</div>
+        <h1>{t('admin.title')}</h1>
+        <p class="page-hero__desc">{t('admin.description')}</p>
+      </div>
+      <a class="btn btn--small" href={withBase(`/${lang}/edit/`)}>
+        <PixelIcon name="edit" size={12} /> {t('admin.submitCorrection')}
+      </a>
+    </div>
+  </header>
+
+  <div class="container admin-shell">
+    <div class="admin-auth">
+      <div class="admin-auth__main">
+        <span class="badge tone-grass" data-admin-mode>{t('admin.publicQueue')}</span>
+        <span class="small muted" data-admin-status>{t('admin.loginRequired')}</span>
+      </div>
+      <div class="cluster">
+        <a class="btn btn--small btn--ghost" href={SITE.github} target="_blank" rel="noopener noreferrer">
+          <PixelIcon name="github" size={12} /> GitHub
+        </a>
+        <button type="button" class="btn btn--small btn--primary js-auth-open" data-admin-login>
+          <PixelIcon name="github" size={12} /> {t('admin.login')}
+        </button>
+      </div>
+    </div>
+
+    <div class="admin-layout">
+      <div class="admin-tabs" role="tablist" aria-label={t('admin.title')}>
+        <button type="button" class="admin-tab is-active" role="tab" aria-selected="true" data-admin-tab="reports">
+          {t('admin.tabs.reports')} <span class="admin-tab__count" data-tab-count="reports">0</span>
+        </button>
+        <button type="button" class="admin-tab" role="tab" aria-selected="false" data-admin-tab="corrections">
+          {t('admin.tabs.corrections')} <span class="admin-tab__count" data-tab-count="corrections">0</span>
+        </button>
+        <button type="button" class="admin-tab" role="tab" aria-selected="false" data-admin-tab="health">
+          {t('admin.tabs.health')} <span class="admin-tab__count" data-tab-count="health">0</span>
+        </button>
+        <button type="button" class="admin-tab" role="tab" aria-selected="false" data-admin-tab="pulls">
+          {t('admin.tabs.pulls')} <span class="admin-tab__count" data-tab-count="pulls">0</span>
+        </button>
+      </div>
+
+      <main class="admin-main">
+        <div class="admin-toolbar">
+          <label class="sr-only" for="admin-search">{t('admin.searchQueue')}</label>
+          <input
+            class="input"
+            id="admin-search"
+            type="search"
+            placeholder={t('admin.searchQueue')}
+            autocomplete="off"
+          />
+          <button type="button" class="btn btn--small" data-admin-refresh>
+            <PixelIcon name="refresh" size={12} /> {t('admin.reload')}
+          </button>
+        </div>
+        <div class="notice notice--danger" data-admin-error hidden></div>
+        <div class="admin-loading" data-admin-loading>
+          <span class="pixel-spinner" aria-hidden="true"></span>
+          {t('admin.loading')}
+        </div>
+        <div class="admin-queue" data-admin-queue hidden></div>
+      </main>
+    </div>
+
+    <div class="notice" data-admin-readonly-note>
+      <PixelIcon name="shield" size={15} />
+      <span data-admin-readonly-text>{t('admin.loginRequired')}</span>
+    </div>
+
+    <noscript>
+      <p class="panel-note">{lang === 'zh' ? '管理队列需要 JavaScript。你也可以直接在 GitHub 上处理 Issue。' : 'The moderation queue needs JavaScript. You can also handle issues directly on GitHub.'}</p>
+    </noscript>
+  </div>
+
+  <script>
+    import '../../scripts/admin';
+  </script>
+</BaseLayout>

@@ -1,0 +1,121 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { Lang } from '../../../config';
+import { SITE, withBase } from '../../../config';
+import { getT } from '../../../i18n';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import DocsSidebar from '../../../components/DocsSidebar.astro';
+import PixelIcon from '../../../components/PixelIcon.astro';
+import { formatDate } from '../../../lib/format';
+
+export async function getStaticPaths() {
+  const docs = await getCollection('docs');
+  return docs.map((entry) => {
+    const segments = entry.id.split('/');
+    const lang = segments.shift() || 'en';
+    return {
+      params: {
+        lang,
+        slug: segments.join('/').replace(/\.md$/, ''),
+      },
+      props: { docId: entry.id },
+    };
+  });
+}
+
+const lang = Astro.params.lang as Lang;
+const t = await getT(lang);
+const all = await getCollection('docs');
+const entry = all.find((item) => item.id === Astro.props.docId);
+if (!entry) throw new Error(`Documentation entry not found: ${Astro.props.docId}`);
+
+const { Content, headings } = await render(entry);
+const navDocs = all
+  .filter((item) => item.id.startsWith(`${lang}/`))
+  .sort((a, b) => a.data.order - b.data.order)
+  .map((item) => ({
+    slug: item.id.replace(`${lang}/`, '').replace(/\.md$/, ''),
+    title: item.data.title,
+    description: item.data.description,
+    updated: item.data.updated,
+    order: item.data.order,
+  }));
+const currentSlug = entry.id.replace(`${lang}/`, '').replace(/\.md$/, '');
+const currentIndex = navDocs.findIndex((doc) => doc.slug === currentSlug);
+const previous = currentIndex > 0 ? navDocs[currentIndex - 1] : undefined;
+const next = currentIndex >= 0 && currentIndex < navDocs.length - 1 ? navDocs[currentIndex + 1] : undefined;
+const body = entry.body ?? '';
+const wordCount = body.split(/\s+/).filter(Boolean).length;
+const cjkCount = (body.match(/[\u3400-\u9fff]/g) || []).length;
+const minutes = Math.max(2, Math.ceil(wordCount / 220 + cjkCount / 450));
+const toc = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+const editUrl = `${SITE.github}/edit/main/${entry.filePath ?? `docs/${entry.id}.md`}`;
+---
+<BaseLayout
+  lang={lang}
+  title={entry.data.title}
+  description={entry.data.description}
+  noindex={false}
+  ogType="article"
+>
+  <div class="container docs-layout">
+    <DocsSidebar lang={lang} docs={navDocs} currentSlug={currentSlug} />
+
+    <article class="docs-content">
+      <header class="docs-content__head">
+        <div class="eyebrow">{t('docs.eyebrow')} · {String(currentIndex + 1).padStart(2, '0')}</div>
+        <h1>{entry.data.title}</h1>
+        <p class="docs-content__desc">{entry.data.description}</p>
+        <div class="docs-content__meta">
+          <span><PixelIcon name="clock" size={11} /> {t('docs.updated')} {formatDate(entry.data.updated, lang)}</span>
+          <span>{t('docs.readingTime', { minutes })}</span>
+          <a href={editUrl} target="_blank" rel="noopener noreferrer">{t('docs.editOnGithub')} ↗</a>
+        </div>
+      </header>
+
+      <div class="docs-prose">
+        <div class="prose">
+          <Content />
+        </div>
+
+        <div class="docs-pager">
+          {previous ? (
+            <a class="docs-pager__link" href={withBase(`/${lang}/docs/${previous.slug}/`)}>
+              <span class="docs-pager__label">← {t('docs.prev')}</span>
+              <span class="docs-pager__title">{previous.title}</span>
+            </a>
+          ) : <span></span>}
+          {next ? (
+            <a class="docs-pager__link docs-pager__link--next" href={withBase(`/${lang}/docs/${next.slug}/`)}>
+              <span class="docs-pager__label">{t('docs.next')} →</span>
+              <span class="docs-pager__title">{next.title}</span>
+            </a>
+          ) : <span></span>}
+        </div>
+
+        <p class="notice" style="margin-top:24px">
+          <PixelIcon name="comment" size={14} />
+          <span>
+            {t('docs.needHelp')}{' '}
+            <a href={SITE.discussions} target="_blank" rel="noopener noreferrer">GitHub</a>
+          </span>
+        </p>
+      </div>
+    </article>
+
+    <aside class="docs-toc" aria-label={t('docs.onThisPage')}>
+      <div class="side-panel">
+        <div class="side-panel__head">{t('docs.onThisPage')}</div>
+        <div class="side-panel__body" style="padding:6px">
+          <div class="toc-list">
+            {toc.map((heading) => (
+              <a href={`#${heading.slug}`} class={heading.depth === 3 ? 'toc-depth-3' : undefined}>
+                {heading.text}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</BaseLayout>

@@ -1,0 +1,645 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import DatasetCard from '../../../components/DatasetCard.astro';
+import Giscus from '../../../components/Giscus.astro';
+import LikeButton from '../../../components/LikeButton.astro';
+import PixelIcon from '../../../components/PixelIcon.astro';
+import type { Lang } from '../../../config';
+import { LANGS, SITE, TEMPLATES, localePath, withBase } from '../../../config';
+import { getT, localize, missingTranslation } from '../../../i18n';
+import { getDataset, getRawDatasets, getRelatedDatasets, getTag, getTagName } from '../../../lib/data';
+import { formatBytes, formatDate, formatDuration, formatInteger } from '../../../lib/format';
+import type { LinkKind } from '../../../lib/types';
+
+export function getStaticPaths() {
+  const datasets = getRawDatasets();
+  return LANGS.flatMap((lang) =>
+    datasets.map((dataset) => ({
+      params: { lang, slug: dataset.slug },
+    })),
+  );
+}
+
+const lang = Astro.params.lang as Lang;
+const slug = Astro.params.slug || '';
+const dataset = getDataset(slug, lang);
+if (!dataset) throw new Error(`Dataset not found: ${slug}`);
+
+const t = await getT(lang);
+const related = getRelatedDatasets(dataset, lang, 3);
+const format = getTag('format', dataset.format);
+const verification = getTag('verification', dataset.compatibility.verification);
+const accessType = getTag('accessTypes', dataset.access.type);
+const license = getTag('license', dataset.license);
+const licenseName = getTagName('license', dataset.license, lang);
+const uploader = dataset.contributors.find((contributor) => contributor.roles.includes('uploader'));
+const updated = formatDate(dataset.updatedAt, lang);
+const created = formatDate(dataset.createdAt, lang);
+const historySorted = [...dataset.history].sort((a, b) => b.date.localeCompare(a.date));
+const replacement = dataset.deprecation?.replacedBy ? getDataset(dataset.deprecation.replacedBy, lang) : undefined;
+const isDeprecated = dataset.deprecation && dataset.deprecation.status !== 'active';
+const issueUrl = dataset.meta.issueNumber ? `${SITE.issues}/${dataset.meta.issueNumber}` : '';
+const editUrl = `${localePath(lang, `edit/${dataset.slug}`)}`;
+const reportUrl = `${TEMPLATES.report}&title=${encodeURIComponent(`[Report] ${dataset.slug}`)}`;
+const streamIcons: Record<string, string> = { video: 'play', state: 'database', action: 'target', events: 'star' };
+const linkIcons: Record<LinkKind, string> = {
+  download: 'download',
+  mirror: 'copy',
+  request: 'mail',
+  sample: 'play',
+  homepage: 'globe',
+  paper: 'file',
+  benchmark: 'target',
+};
+const accessHints: Record<string, string> = {
+  open: t('dataset.openAccessHint'),
+  request: t('dataset.accessRequestHint'),
+  restricted: t('dataset.restrictedHint'),
+};
+const historyTypeLabels: Record<string, { en: string; zh: string }> = {
+  release: { en: 'Release', zh: '发布' },
+  metadata: { en: 'Metadata', zh: '元数据' },
+  correction: { en: 'Correction', zh: '更正' },
+  deprecation: { en: 'Deprecation', zh: '弃用' },
+};
+const pageTitle = dataset.meta.title;
+const image = dataset.meta.cover;
+const pageUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://kurisa-kuku.github.io').toString();
+
+const jsonLd = dataset.demo
+  ? null
+  : {
+      '@context': 'https://schema.org',
+      '@type': 'Dataset',
+      name: dataset.meta.title,
+      description: dataset.meta.summary,
+      url: pageUrl,
+      license: license?.url || SITE.licenseUrl,
+      creator: dataset.contributors.map((contributor) => ({
+        '@type': 'Person',
+        name: contributor.github,
+        url: `https://github.com/${contributor.github}`,
+      })),
+      datePublished: dataset.createdAt,
+      dateModified: dataset.updatedAt,
+      keywords: [
+        'Minecraft',
+        ...dataset.tags.tasks,
+        ...dataset.tags.dimensions,
+        ...dataset.tags.trainingUses,
+      ],
+      variableMeasured: dataset.tags.tasks,
+      distribution: dataset.access.links.map((link) => ({
+        '@type': 'DataDownload',
+        name: link.label,
+        contentUrl: link.url,
+      })),
+      isAccessibleForFree: dataset.access.type === 'open',
+    };
+
+const usageHow = localize(dataset.usage.howToLoad, lang);
+const usageRecommended = localize(dataset.usage.recommendedUse, lang);
+const usageLimits = localize(dataset.usage.limitations, lang);
+---
+<BaseLayout
+  lang={lang}
+  title={pageTitle}
+  description={dataset.meta.summary}
+  image={image}
+  ogType="article"
+>
+  {jsonLd && <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+  <div class="detail-page">
+    <div class="detail-top">
+      <div class="container">
+        <nav class="breadcrumbs" aria-label={t('dataset.breadcrumb')}>
+          <a href={localePath(lang)}>{t('nav.home')}</a>
+          <span class="breadcrumbs__sep" aria-hidden="true">/</span>
+          <a href={localePath(lang, 'datasets')}>{t('dataset.breadcrumb')}</a>
+          <span class="breadcrumbs__sep" aria-hidden="true">/</span>
+          <span aria-current="page">{dataset.meta.title}</span>
+        </nav>
+
+        <div class="detail-heading">
+          <div class="detail-heading__copy">
+            <div class="detail-kicker">
+              <span class={`badge tone-${format?.tone ?? 'stone'}`}>{getTagName('format', dataset.format, lang)}</span>
+              <span class={`badge tone-${verification?.tone ?? 'stone'}`}>{getTagName('verification', dataset.compatibility.verification, lang)}</span>
+              <span class={`badge tone-${accessType?.tone ?? 'stone'}`}>{getTagName('accessTypes', dataset.access.type, lang)}</span>
+              {dataset.demo && <span class="badge badge--outline">{t('card.demo')}</span>}
+              {isDeprecated && <span class="badge tone-red">{t('dataset.deprecated')}</span>}
+            </div>
+            <h1 class="detail-title">{dataset.meta.title}</h1>
+            <p class="detail-summary">{dataset.meta.summary}</p>
+            <div class="detail-byline">
+              {uploader && (
+                <span class="detail-byline__item">
+                  <PixelIcon name="users" size={12} />
+                  {t('common.by')}{' '}
+                  <a href={`https://github.com/${uploader.github}`} target="_blank" rel="noopener noreferrer" class="mono">
+                    @{uploader.github}
+                  </a>
+                </span>
+              )}
+              <span class="detail-byline__item">
+                <PixelIcon name="clock" size={12} />
+                {t('dataset.updatedOn')} {updated}
+              </span>
+              <span class="detail-byline__item">
+                <PixelIcon name="database" size={12} />
+                {formatInteger(dataset.scale.episodes, lang)} {t(dataset.scale.episodes === 1 ? 'card.episode' : 'card.episodes')}
+              </span>
+            </div>
+          </div>
+
+          <div class="detail-actions">
+            <LikeButton
+              lang={lang}
+              slug={dataset.slug}
+              count={dataset.meta.likeCount}
+              issueNumber={dataset.meta.issueNumber}
+            />
+            <a class="btn btn--small btn--accent" href={editUrl}>
+              <PixelIcon name="edit" size={12} /> {t('dataset.editDataset')}
+            </a>
+            <a class="btn btn--small" href={reportUrl} target="_blank" rel="noopener noreferrer">
+              <PixelIcon name="alert" size={12} /> {t('actions.report')}
+            </a>
+            <button type="button" class="btn btn--small btn--icon js-copy-link" aria-label={t('dataset.copyLink')} title={t('dataset.copyLink')}>
+              <PixelIcon name="link" size={13} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-tabs">
+      <div class="container">
+        <nav class="detail-tabs__list" aria-label={t('dataset.overview')}>
+          <a class="detail-tab is-active" href="#overview">{t('dataset.overview')}</a>
+          <a class="detail-tab" href="#compatibility">{t('dataset.compatibility')}</a>
+          <a class="detail-tab" href="#access">{t('dataset.access')}</a>
+          <a class="detail-tab" href="#usage">{t('dataset.usage')}</a>
+          <a class="detail-tab" href="#community">{t('dataset.community')}</a>
+          <a class="detail-tab" href="#history">{t('dataset.history')}</a>
+        </nav>
+      </div>
+    </div>
+
+    <div class="container detail-layout">
+      <div class="detail-main">
+        {dataset.demo && (
+          <p class="notice">
+            <PixelIcon name="info" size={15} />
+            <span>{t('dataset.demoNotice')}</span>
+          </p>
+        )}
+        {dataset.meta.hasTranslationGap && (
+          <p class="notice notice--info">
+            <PixelIcon name="globe" size={15} />
+            <span>{t('dataset.translationMissing')}</span>
+          </p>
+        )}
+        {isDeprecated && (
+          <div class="deprecation-banner">
+            <div class="deprecation-banner__title">
+              <PixelIcon name="alert" size={13} />{' '}
+              {dataset.deprecation?.status === 'superseded' ? t('dataset.superseded') : t('dataset.deprecated')}
+            </div>
+            <p>
+              {dataset.deprecation?.note
+                ? localize(dataset.deprecation.note, lang).text
+                : dataset.deprecation?.status === 'superseded'
+                  ? t('dataset.supersededDesc')
+                  : t('dataset.deprecatedDesc')}
+            </p>
+            {replacement && (
+              <p style="margin-top:8px">
+                {t('dataset.replacedBy')}:{' '}
+                <a href={withBase(`/${lang}/datasets/${replacement.slug}/`)}>{replacement.meta.title}</a>
+              </p>
+            )}
+          </div>
+        )}
+
+        <figure class="detail-hero-cover" style="margin:0">
+          <img src={withBase(dataset.meta.cover)} alt={dataset.meta.title} width="1280" height="720" loading="eager" decoding="async" />
+          <figcaption class="detail-cover-caption">
+            <span class="cluster">
+              <span class={`badge tone-${format?.tone ?? 'stone'}`}>{getTagName('format', dataset.format, lang)}</span>
+              <span class="badge">{dataset.compatibility.minecraftVersions.map((v) => `MC ${v}`).join(' · ') || t('filter.allVersions')}</span>
+            </span>
+            <span class={`badge tone-${verification?.tone ?? 'stone'}`}>{getTagName('verification', dataset.compatibility.verification, lang)}</span>
+          </figcaption>
+        </figure>
+
+        <section class="detail-section" id="overview" aria-labelledby="overview-heading">
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="overview-heading"><PixelIcon name="layout" size={16} /> {t('dataset.overview')}</h2>
+              <span class={`badge tone-${accessType?.tone ?? 'stone'}`}>{getTagName('accessTypes', dataset.access.type, lang)}</span>
+            </div>
+            <div class="panel-body">
+              <div class="stats-strip">
+                <div class="stats-strip__item">
+                  <div class="stats-strip__value">{formatInteger(dataset.scale.episodes, lang)}</div>
+                  <div class="stats-strip__label">{t('dataset.episodes')}</div>
+                </div>
+                <div class="stats-strip__item">
+                  <div class="stats-strip__value">{formatBytes(dataset.scale.bytes, lang)}</div>
+                  <div class="stats-strip__label">{t('dataset.totalSize')}</div>
+                </div>
+                <div class="stats-strip__item">
+                  <div class="stats-strip__value">{formatDuration(dataset.scale.durationSeconds, lang)}</div>
+                  <div class="stats-strip__label">{t('dataset.duration')}</div>
+                </div>
+              </div>
+
+              <div class="tag-groups">
+                <div class="tag-group">
+                  <h3>{t('dataset.tasks')}</h3>
+                  <div class="tag-list">
+                    {dataset.tags.tasks.map((tag) => (
+                      <span class="tag tag--task">{getTagName('tasks', tag, lang)}</span>
+                    ))}
+                  </div>
+                </div>
+                <div class="tag-group">
+                  <h3>{t('dataset.dimensions')}</h3>
+                  <div class="tag-list">
+                    {dataset.tags.dimensions.map((tag) => {
+                      const def = getTag('dimensions', tag);
+                      return <span class="tag" style={`--tag-color:${def?.color ?? 'var(--border-soft)'}`}>{getTagName('dimensions', tag, lang)}</span>;
+                    })}
+                  </div>
+                </div>
+                <div class="tag-group">
+                  <h3>{t('dataset.trainingUses')}</h3>
+                  <div class="tag-list">
+                    {dataset.tags.trainingUses.map((tag) => (
+                      <span class="tag">{getTagName('trainingUses', tag, lang)}</span>
+                    ))}
+                  </div>
+                </div>
+                <div class="tag-group">
+                  <h3>{t('dataset.quality')}</h3>
+                  <div class="tag-list">
+                    {dataset.tags.quality.map((tag) => {
+                      const def = getTag('quality', tag);
+                      const description = def?.description ? localize(def.description, lang).text : undefined;
+                      return (
+                        <span class={`badge tone-${def?.tone ?? 'stone'} badge--status`} title={description}>
+                          {getTagName('quality', tag, lang)}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div class="usage-block">
+                <h3>{t('dataset.streams')}</h3>
+                <div class="stream-list">
+                  {dataset.compatibility.streams.map((stream) => (
+                    <span class="stream">
+                      <span class="stream__icon"><PixelIcon name={streamIcons[stream] ?? 'database'} size={13} /></span>
+                      {getTagName('streams', stream, lang)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="detail-section" id="compatibility" aria-labelledby="compatibility-heading">
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="compatibility-heading"><PixelIcon name="cube" size={16} /> {t('dataset.compatibility')}</h2>
+            </div>
+            <div class="panel-body">
+              <div class="meta-grid">
+                <div class="meta-grid__item">
+                  <div class="meta-label">{t('dataset.format')}</div>
+                  <div class="meta-value">{getTagName('format', dataset.format, lang)}</div>
+                </div>
+                <div class="meta-grid__item">
+                  <div class="meta-label">{t('dataset.mcVersions')}</div>
+                  <div class="meta-value">{dataset.compatibility.minecraftVersions.join(', ') || t('common.notAvailable')}</div>
+                </div>
+                <div class="meta-grid__item">
+                  <div class="meta-label">{t('dataset.modVersions')}</div>
+                  <div class="meta-value">{dataset.compatibility.modVersions?.join(', ') || t('common.dash')}</div>
+                </div>
+                <div class="meta-grid__item">
+                  <div class="meta-label">{t('dataset.dataFormat')}</div>
+                  <div class="meta-value">{dataset.compatibility.dataFormatVersion || t('common.dash')}</div>
+                </div>
+                <div class="meta-grid__item">
+                  <div class="meta-label">{t('dataset.loader')}</div>
+                  <div class="meta-value">{dataset.compatibility.loader || t('common.dash')}</div>
+                </div>
+                <div class="meta-grid__item">
+                  <div class="meta-label">{t('dataset.environment')}</div>
+                  <div class="meta-value">{getTagName('environment', dataset.environment, lang)}</div>
+                </div>
+                <div class="meta-grid__item">
+                  <div class="meta-label">{t('dataset.verification')}</div>
+                  <div class="meta-value">
+                    <span class={`badge tone-${verification?.tone ?? 'stone'}`}>{getTagName('verification', dataset.compatibility.verification, lang)}</span>
+                  </div>
+                </div>
+                <div class="meta-grid__item">
+                  <div class="meta-label">{t('dataset.license')}</div>
+                  <div class="meta-value">
+                    {license?.url ? (
+                      <a href={license.url} target="_blank" rel="noopener noreferrer">{licenseName}</a>
+                    ) : licenseName}
+                  </div>
+                </div>
+              </div>
+              {verification?.description && (
+                <p class="small muted" style="margin-top:12px">{localize(verification.description, lang).text}</p>
+              )}
+              <p class="tiny faint" style="margin-top:8px">{t('dataset.licenseNote')}</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="detail-section" id="access" aria-labelledby="access-heading">
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="access-heading"><PixelIcon name="download" size={16} /> {t('dataset.access')}</h2>
+              <span class={`badge tone-${accessType?.tone ?? 'stone'}`}>{t('dataset.accessType')}: {getTagName('accessTypes', dataset.access.type, lang)}</span>
+            </div>
+            <div class="panel-body">
+              <p class="small muted" style="margin-bottom:14px">{accessHints[dataset.access.type]}</p>
+
+              <h3 class="usage-subhead">{t('dataset.downloads')}</h3>
+              <div class="download-list">
+                {dataset.access.links.map((link) => (
+                  <a class="download-link" href={link.url} target="_blank" rel="noopener noreferrer">
+                    <span class="download-link__main">
+                      <span class="download-link__kind"><PixelIcon name={linkIcons[link.kind] ?? 'link'} size={14} /></span>
+                      <span class="download-link__label">
+                        {link.label}
+                        <span class="download-link__url">{link.url}</span>
+                      </span>
+                    </span>
+                    <span class="cluster" style="flex:0 0 auto">
+                      <span class="badge">{getTagName('linkTypes', link.kind, lang)}</span>
+                      <PixelIcon name="external" size={13} />
+                    </span>
+                  </a>
+                ))}
+              </div>
+              <p class="tiny faint" style="margin-top:10px">{t('dataset.downloadNote')}</p>
+
+              <div class="usage-block" style="margin-top:24px">
+                <h3>{t('dataset.privacyTitle')}</h3>
+                <p class="small muted" style="margin-bottom:12px">{t('dataset.privacyIntro')}</p>
+                <div class="privacy-grid">
+                  <div class:list={['privacy-item', dataset.access.privacy.personalData ? 'privacy-item--warning' : '']}>
+                    <span class="privacy-item__icon"><PixelIcon name={dataset.access.privacy.personalData ? 'alert' : 'shield'} size={14} /></span>
+                    <div class="privacy-item__label">{t('dataset.personalData')}</div>
+                    <div class="privacy-item__value">
+                      {dataset.access.privacy.personalData ? t('dataset.personalDataYes') : t('dataset.personalDataNo')}
+                    </div>
+                  </div>
+                  <div class:list={['privacy-item', dataset.access.privacy.thirdPartyContent ? 'privacy-item--warning' : '']}>
+                    <span class="privacy-item__icon"><PixelIcon name={dataset.access.privacy.thirdPartyContent ? 'alert' : 'shield'} size={14} /></span>
+                    <div class="privacy-item__label">{t('dataset.thirdParty')}</div>
+                    <div class="privacy-item__value">
+                      {dataset.access.privacy.thirdPartyContent ? t('dataset.thirdPartyYes') : t('dataset.thirdPartyNo')}
+                    </div>
+                  </div>
+                  <div class:list={['privacy-item', dataset.access.privacy.redistributionPermitted ? '' : 'privacy-item--warning']}>
+                    <span class="privacy-item__icon"><PixelIcon name={dataset.access.privacy.redistributionPermitted ? 'shield' : 'alert'} size={14} /></span>
+                    <div class="privacy-item__label">{t('dataset.redistribution')}</div>
+                    <div class="privacy-item__value">
+                      {dataset.access.privacy.redistributionPermitted ? t('dataset.redistributionYes') : t('dataset.redistributionNo')}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="detail-section" id="usage" aria-labelledby="usage-heading">
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="usage-heading"><PixelIcon name="book" size={16} /> {t('dataset.usage')}</h2>
+            </div>
+            <div class="panel-body">
+              <div class="usage-block" style="margin-top:0">
+                <h3>{t('dataset.howToLoad')}</h3>
+                {usageHow.fallback && missingTranslation(dataset.usage.howToLoad, lang) && (
+                  <span class="badge tone-gold" style="margin-bottom:8px">{t('dataset.translationShort')}</span>
+                )}
+                <div class="detail-prose" id="usage-how">{usageHow.text}</div>
+                <button type="button" class="copy-code-btn" data-copy-target="#usage-how">{t('actions.copy')}</button>
+              </div>
+              <div class="usage-block">
+                <h3>{t('dataset.recommendedUse')}</h3>
+                <div class="detail-prose">{usageRecommended.text}</div>
+                {usageRecommended.fallback && missingTranslation(dataset.usage.recommendedUse, lang) && (
+                  <span class="badge tone-gold" style="margin-top:8px">{t('dataset.translationShort')}</span>
+                )}
+              </div>
+              <div class="usage-block">
+                <h3>{t('dataset.limitations')}</h3>
+                <div class="detail-prose">{usageLimits.text}</div>
+                {usageLimits.fallback && missingTranslation(dataset.usage.limitations, lang) && (
+                  <span class="badge tone-gold" style="margin-top:8px">{t('dataset.translationShort')}</span>
+                )}
+              </div>
+              <div class="usage-block">
+                <h3>{t('dataset.examples')}</h3>
+                {dataset.usage.examples.length > 0 ? (
+                  <div class="example-links">
+                    {dataset.usage.examples.map((link) => (
+                      <a class="example-link" href={link.url} target="_blank" rel="noopener noreferrer">
+                        <PixelIcon name={linkIcons[link.kind] ?? 'link'} size={12} />
+                        {link.label}
+                        <PixelIcon name="external" size={10} />
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p class="small faint">{t('dataset.noExamples')}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="detail-section" id="community" aria-labelledby="community-heading">
+          <div class="panel comments-panel">
+            <div class="panel-head">
+              <h2 id="community-heading"><PixelIcon name="comment" size={16} /> {t('dataset.commentsTitle')}</h2>
+              <div class="comments-meta">
+                <span><PixelIcon name="heart" size={11} /> {formatInteger(dataset.meta.likeCount, lang)}</span>
+                <span><PixelIcon name="comment" size={11} /> {formatInteger(dataset.meta.commentCount, lang)}</span>
+              </div>
+            </div>
+            <div class="panel-body">
+              <p class="small muted" style="margin-bottom:14px">{t('dataset.commentsDesc')}</p>
+              <Giscus lang={lang} slug={dataset.slug} />
+              {issueUrl && (
+                <div class="cluster" style="margin-top:14px">
+                  <a class="btn btn--small btn--ghost" href={issueUrl} target="_blank" rel="noopener noreferrer">
+                    <PixelIcon name="github" size={12} /> {t('dataset.issueLink')}
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section class="detail-section" id="history" aria-labelledby="history-heading">
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="history-heading"><PixelIcon name="clock" size={16} /> {t('dataset.history')}</h2>
+              <span class="tiny faint">{t('dataset.updatedOn')} {updated}</span>
+            </div>
+            <div class="panel-body">
+              <div class="history-list">
+                {historySorted.map((entry) => (
+                  <article class="history-item">
+                    <div class="history-date">
+                      {formatDate(entry.date, lang)}
+                    </div>
+                    <div>
+                      <div class="cluster" style="gap:6px;margin-bottom:4px">
+                        <span class="badge">{historyTypeLabels[entry.type]?.[lang] ?? entry.type}</span>
+                        {entry.version && <span class="history-version">v{entry.version}</span>}
+                      </div>
+                      <div class="history-note">{localize(entry.note, lang).text}</div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="detail-section" aria-labelledby="contributors-heading">
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="contributors-heading"><PixelIcon name="users" size={16} /> {t('dataset.contributors')}</h2>
+              <span class="tiny faint">{t('common.created')} {created}</span>
+            </div>
+            <div class="panel-body">
+              <div class="contributor-list">
+                {dataset.contributors.map((contributor) => (
+                  <a
+                    class="contributor"
+                    href={`https://github.com/${contributor.github}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style="text-decoration:none"
+                  >
+                    <img
+                      src={`https://github.com/${contributor.github}.png?size=80`}
+                      alt=""
+                      width="34"
+                      height="34"
+                      loading="lazy"
+                      referrerpolicy="no-referrer"
+                    />
+                    <span style="min-width:0">
+                      <span class="contributor__name">@{contributor.github}</span>
+                      <span class="contributor__roles">
+                        {contributor.roles.map((role) => getTagName('contributorRoles', role, lang)).join(' · ')}
+                      </span>
+                    </span>
+                  </a>
+                ))}
+              </div>
+              {dataset.submission?.submittedBy && (
+                <p class="tiny faint" style="margin-top:12px">
+                  {t('dataset.submittedBy')}: @{dataset.submission.submittedBy}
+                  {dataset.submission.source ? ` · ${dataset.submission.source}` : ''}
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="detail-sidebar" aria-label={t('dataset.atAGlance')}>
+        <div class="side-panel">
+          <div class="side-panel__head">{t('dataset.atAGlance')}</div>
+          <div class="side-panel__body">
+            <dl class="glance-list">
+              <div class="glance-row"><dt>{t('dataset.format')}</dt><dd>{getTagName('format', dataset.format, lang)}</dd></div>
+              <div class="glance-row"><dt>{t('dataset.license')}</dt><dd>{licenseName}</dd></div>
+              <div class="glance-row"><dt>{t('dataset.mcVersions')}</dt><dd>{dataset.compatibility.minecraftVersions.join(', ') || t('common.dash')}</dd></div>
+              <div class="glance-row"><dt>{t('dataset.episodes')}</dt><dd>{formatInteger(dataset.scale.episodes, lang)}</dd></div>
+              <div class="glance-row"><dt>{t('dataset.totalSize')}</dt><dd>{formatBytes(dataset.scale.bytes, lang)}</dd></div>
+              <div class="glance-row"><dt>{t('dataset.duration')}</dt><dd>{formatDuration(dataset.scale.durationSeconds, lang)}</dd></div>
+              <div class="glance-row"><dt>{t('common.lastUpdated')}</dt><dd>{updated}</dd></div>
+              <div class="glance-row"><dt>{t('dataset.community')}</dt><dd>{formatInteger(dataset.meta.likeCount, lang)} ♥ · {formatInteger(dataset.meta.commentCount, lang)} 💬</dd></div>
+            </dl>
+          </div>
+        </div>
+
+        <div class="side-panel side-panel--downloads">
+          <div class="side-panel__head">{t('dataset.downloads')}</div>
+          <div class="side-panel__body">
+            <div class="side-download">
+              {dataset.access.links.map((link) => (
+                <a class="btn btn--small btn--primary" href={link.url} target="_blank" rel="noopener noreferrer">
+                  <PixelIcon name={linkIcons[link.kind] ?? 'download'} size={12} />
+                  {link.label}
+                  <PixelIcon name="external" size={10} />
+                </a>
+              ))}
+            </div>
+            <p class="side-license">
+              {license?.url ? <a href={license.url} target="_blank" rel="noopener noreferrer">{licenseName}</a> : licenseName}
+              <br />
+              {t('dataset.licenseNote')}
+            </p>
+          </div>
+        </div>
+
+        <div class="side-panel">
+          <div class="side-panel__head">{t('dataset.quickLinks')}</div>
+          <div class="side-panel__body">
+            <div class="side-download">
+              <a class="btn btn--small" href={editUrl}>
+                <PixelIcon name="edit" size={12} /> {t('dataset.editDataset')}
+              </a>
+              <a class="btn btn--small" href={reportUrl} target="_blank" rel="noopener noreferrer">
+                <PixelIcon name="alert" size={12} /> {t('actions.report')}
+              </a>
+              <button type="button" class="btn btn--small js-copy-link">
+                <PixelIcon name="link" size={12} /> {t('dataset.copyLink')}
+              </button>
+              <a class="btn btn--small btn--ghost" href={SITE.recorderRepo} target="_blank" rel="noopener noreferrer">
+                <PixelIcon name="pickaxe" size={12} /> Mwarecorder
+              </a>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    {related.length > 0 && (
+      <section class="container related-section" aria-labelledby="related-title">
+        <div class="section-head">
+          <div class="section-head__copy">
+            <div class="eyebrow">{t('home.tagsEyebrow')}</div>
+            <h2 class="h2" id="related-title" style="font-size:clamp(1.4rem,2.5vw,2rem)">{t('dataset.relatedTitle')}</h2>
+          </div>
+          <a class="btn btn--small" href={localePath(lang, 'datasets')}>{t('actions.viewAll')}</a>
+        </div>
+        <div class="dataset-grid">
+          {related.map((item) => <DatasetCard dataset={item} lang={lang} />)}
+        </div>
+      </section>
+    )}
+  </div>
+</BaseLayout>

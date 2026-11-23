@@ -1,0 +1,63 @@
+name: Metadata correction
+description: Propose a correction to an existing dataset listing. The JSON is validated and turned into a pull request.
+title: "[Correction] "
+labels: ["dataset-correction", "needs-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 更正数据集元数据 / Correct dataset metadata
+
+        推荐使用网站上的 **元数据编辑器**：它会自动生成结构化 Issue。也可以在这里粘贴修正后的完整 JSON。
+
+        The website's **metadata editor** is the easiest route and creates a structured issue automatically. You can also paste the complete corrected JSON below.
+
+        - 不要修改 `slug`、封面、贡献者或历史记录；维护者会在审核时保留这些字段。 / Do not change `slug`, cover, contributors or history; these are preserved during review.
+        - 每条更正都需要说明改了什么以及为什么。 / Every correction needs a change note.
+
+  - type: input
+    id: dataset
+    attributes:
+      label: Dataset slug / 数据集 slug
+      description: The slug from the dataset URL.
+      placeholder: your-dataset-slug
+    validations:
+      required: true
+
+  - type: textarea
+    id: correction-json
+    attributes:
+      label: Complete corrected JSON / 修正后的完整 JSON
+      description: Copy the JSON from the metadata editor and paste it here. The workflow validates it before opening a PR.
+      render: json
+      placeholder: |
+        {
+          "slug": "your-dataset-slug",
+          …
+        }
+    validations:
+      required: true
+
+  - type: textarea
+    id: correction-note
+    attributes:
+      label: What changed, and why? / 改动内容与原因
+      description: Include sources or evidence when correcting factual metadata.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence / 依据 (optional)
+      description: Links to the archive, verifier report, license or relevant discussion.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: declaration
+    attributes:
+      label: Declaration / 声明
+      options:
+        - label: This correction is accurate to the best of my knowledge and contains no private information. / 此更正据我所知准确无误，且不包含隐私信息。
+          required: true

@@ -1,0 +1,37 @@
+{
+  "name": "mw-datasets",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MineWorld Datasets — a community catalog for Minecraft agent datasets",
+  "packageManager": "pnpm@11.28.5",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "node scripts/validate-data.mjs && astro check && astro build",
+    "build:fast": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "validate:data": "node scripts/validate-data.mjs",
+    "covers": "node scripts/process-covers.mjs",
+    "sync:community": "node scripts/sync-community.mjs",
+    "sync:labels": "node scripts/sync-labels.mjs",
+    "art": "python scripts/generate-art.py"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "3.7.6",
+    "@fontsource/fusion-pixel-12px-proportional-sc": "5.3.0",
+    "@fontsource/press-start-2p": "5.3.0",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "astro": "5.18.2",
+    "i18next": "27.2.4",
+    "sharp": "0.35.5"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.12",
+    "typescript": "5.9.3"
+  }
+}

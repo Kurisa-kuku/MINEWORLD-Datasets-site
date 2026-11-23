@@ -1,0 +1,5 @@
+allowBuilds:
+  esbuild: true
+  sharp: true
+minimumReleaseAgeExclude:
+  - i18next@27.2.4

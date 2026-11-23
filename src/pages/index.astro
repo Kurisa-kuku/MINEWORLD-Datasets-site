@@ -1,0 +1,52 @@
+---
+import { withBase } from '../config';
+const enUrl = withBase('/en/');
+const zhUrl = withBase('/zh/');
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>MineWorld Datasets</title>
+    <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
+    <style>
+      :root { color-scheme: light; font-family: ui-monospace, monospace; }
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #b7e4fa; color: #17211a; }
+      .box { padding: 24px 28px; border: 2px solid #1c2a20; background: #fffdf4; box-shadow: 6px 6px 0 #29452f; max-width: 420px; }
+      h1 { margin: 0 0 8px; font-size: 20px; }
+      p { margin: 0 0 16px; line-height: 1.6; font-size: 14px; }
+      a { color: #17211a; font-weight: 700; }
+      .loader { display: inline-block; width: 14px; height: 14px; background: #65bd4d; animation: spin 750ms steps(4) infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { .loader { animation: none; } }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <p><span class="loader" aria-hidden="true"></span> Routing to your language…</p>
+      <h1>MineWorld Datasets</h1>
+      <p><a href={enUrl}>English</a> · <a href={zhUrl}>中文</a></p>
+      <noscript><p>Please choose a language above.</p></noscript>
+    </div>
+    <script is:inline define:vars={{ enUrl, zhUrl }}>
+      (() => {
+        let stored = null;
+        try {
+          stored = localStorage.getItem('mw-locale');
+        } catch {
+          stored = null;
+        }
+        const languages = stored ? [stored] : (navigator.languages || [navigator.language || 'en']);
+        const preferZh = languages.some((language) => String(language).toLowerCase().startsWith('zh'));
+        try {
+          localStorage.setItem('mw-locale', preferZh ? 'zh' : 'en');
+        } catch {
+          // Private browsing can block storage; redirect still works.
+        }
+        window.location.replace(preferZh ? zhUrl : enUrl);
+      })();
+    </script>
+  </body>
+</html>

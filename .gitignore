@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build
+dist/
+.astro/
+.output/
+
+# local environment
+.env
+.env.*
+!.env.example
+!.env.production.example
+.dev.vars
+.wrangler/
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+
+# scratch
+*.log
+/tmp/
+/.cache/
+tmp-*

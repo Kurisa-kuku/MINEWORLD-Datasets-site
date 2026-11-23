@@ -1,0 +1,170 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PixelIcon from '../../components/PixelIcon.astro';
+import type { Lang } from '../../config';
+import { SITE, TEMPLATES, localePath } from '../../config';
+import { getT } from '../../i18n';
+
+export function getStaticPaths() {
+  return [{ params: { lang: 'en' } }, { params: { lang: 'zh' } }];
+}
+
+const lang = Astro.params.lang as Lang;
+const t = await getT(lang);
+const docsUrl = `${localePath(lang, 'docs')}getting-started/`;
+const editUrl = localePath(lang, 'edit');
+---
+<BaseLayout lang={lang} title={t('submit.title')} description={t('submit.description')}>
+  <section class="submit-hero">
+    <div class="container submit-hero__inner">
+      <div>
+        <div class="eyebrow">{t('submit.eyebrow')}</div>
+        <h1>{t('submit.title')}</h1>
+        <p class="lead" style="margin-top:18px;max-width:640px">{t('submit.description')}</p>
+        <p class="small muted" style="margin-top:12px;display:flex;align-items:flex-start;gap:8px">
+          <PixelIcon name="github" size={14} />
+          {t('submit.githubNotice')}
+        </p>
+      </div>
+
+      <div class="submit-hero__card">
+        <div class="submit-hero__card-head">
+          <PixelIcon name="upload" size={14} /> {t('submit.eyebrow')}
+        </div>
+        <div class="submit-hero__card-body">
+          <div class="submit-cta-list">
+            <a class="btn btn--primary btn--large btn--block" href={TEMPLATES.submission} target="_blank" rel="noopener noreferrer">
+              <PixelIcon name="github" size={17} />
+              {t('submit.cta')}
+              <PixelIcon name="external" size={12} />
+            </a>
+            <a class="btn btn--block" href={editUrl}>
+              <PixelIcon name="edit" size={14} />
+              {t('submit.correctionCta')}
+            </a>
+            <a class="btn btn--ghost btn--block" href={TEMPLATES.report} target="_blank" rel="noopener noreferrer">
+              <PixelIcon name="alert" size={14} />
+              {t('submit.reportCta')}
+            </a>
+          </div>
+          <p class="tiny faint" style="margin-top:14px">{t('submit.templateNote')}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <div class="section-head__copy">
+          <div class="eyebrow">{t('home.howEyebrow')}</div>
+          <h2 class="h2">{t('submit.stepsTitle')}</h2>
+        </div>
+      </div>
+      <div class="submit-step-grid">
+        <article class="submit-step">
+          <span class="submit-step__num">01</span>
+          <h3>{t('submit.step1Title')}</h3>
+          <p>{t('submit.step1Desc')}</p>
+        </article>
+        <article class="submit-step">
+          <span class="submit-step__num" style="background:var(--grass)">02</span>
+          <h3>{t('submit.step2Title')}</h3>
+          <p>{t('submit.step2Desc')}</p>
+        </article>
+        <article class="submit-step">
+          <span class="submit-step__num" style="background:var(--amethyst);color:var(--amethyst-ink)">03</span>
+          <h3>{t('submit.step3Title')}</h3>
+          <p>{t('submit.step3Desc')}</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--surface">
+    <div class="container grid-2">
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="h3"><PixelIcon name="check" size={16} /> {t('submit.requirementsTitle')}</h2>
+        </div>
+        <div class="panel-body">
+          <ul class="check-list">
+            <li>{t('submit.req1')}</li>
+            <li>{t('submit.req2')}</li>
+            <li>{t('submit.req3')}</li>
+            <li>{t('submit.req4')}</li>
+            <li>{t('submit.req5')}</li>
+            <li>{t('submit.req6')}</li>
+          </ul>
+          <div class="notice notice--info" style="margin-top:18px">
+            <PixelIcon name="info" size={15} />
+            <span>{t('submit.coverDesc')}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="h3"><PixelIcon name="shield" size={16} /> {t('submit.privacyTitle')}</h2>
+        </div>
+        <div class="panel-body">
+          <p class="small" style="display:flex;gap:9px;align-items:flex-start">
+            <PixelIcon name="alert" size={14} /> {t('submit.privacy1')}
+          </p>
+          <p class="small" style="display:flex;gap:9px;align-items:flex-start">
+            <PixelIcon name="alert" size={14} /> {t('submit.privacy2')}
+          </p>
+          <p class="small" style="display:flex;gap:9px;align-items:flex-start">
+            <PixelIcon name="shield" size={14} /> {t('submit.privacy3')}
+          </p>
+          <div class="divider"></div>
+          <h3 class="font-pixel" style="font-size:13px;margin-bottom:12px">{t('submit.checklistTitle')}</h3>
+          <ul class="check-list">
+            <li>{t('submit.checklist1')}</li>
+            <li>{t('submit.checklist2')}</li>
+            <li>{t('submit.checklist3')}</li>
+            <li>{t('submit.checklist4')}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container grid-2">
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="h3"><PixelIcon name="database" size={16} /> {t('submit.dataTitle')}</h2>
+        </div>
+        <div class="panel-body">
+          <p class="small muted">{t('submit.dataDesc')}</p>
+          <div class="btn-row" style="margin-top:18px">
+            <a class="btn btn--small" href={SITE.recorderRepo} target="_blank" rel="noopener noreferrer">
+              <PixelIcon name="pickaxe" size={12} /> {t('submit.recorderCta')}
+            </a>
+            <a class="btn btn--small btn--ghost" href={docsUrl}>
+              <PixelIcon name="book" size={12} /> {t('submit.docsCta')}
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2 class="h3"><PixelIcon name="edit" size={16} /> {t('submit.correctionsTitle')}</h2>
+        </div>
+        <div class="panel-body">
+          <p class="small muted">{t('submit.correctionsDesc')}</p>
+          <div class="btn-row" style="margin-top:18px">
+            <a class="btn btn--small btn--accent" href={editUrl}>
+              <PixelIcon name="edit" size={12} /> {t('submit.openEditor')}
+            </a>
+            <a class="btn btn--small" href={TEMPLATES.correction} target="_blank" rel="noopener noreferrer">
+              <PixelIcon name="github" size={12} /> {t('actions.openIssue')}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

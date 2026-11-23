@@ -1,0 +1,384 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PixelIcon from '../../../components/PixelIcon.astro';
+import type { Lang } from '../../../config';
+import { LANGS, withBase } from '../../../config';
+import { getT } from '../../../i18n';
+import {
+  getDataset,
+  getRawDataset,
+  getRawDatasets,
+  getTagDefinitions,
+  getTagName,
+} from '../../../lib/data';
+import { formatBytes, formatDate, formatDuration, formatInteger } from '../../../lib/format';
+
+export function getStaticPaths() {
+  const datasets = getRawDatasets();
+  return LANGS.flatMap((lang) =>
+    datasets.map((dataset) => ({
+      params: { lang, slug: dataset.slug },
+    })),
+  );
+}
+
+const lang = Astro.params.lang as Lang;
+const slug = Astro.params.slug || '';
+const raw = getRawDataset(slug);
+const dataset = getDataset(slug, lang);
+if (!raw || !dataset) throw new Error(`Dataset not found for editor: ${slug}`);
+
+const t = await getT(lang);
+const safeJson = JSON.stringify(raw).replace(/</g, '\\u003c');
+const formats = getTagDefinitions('format');
+const licenses = getTagDefinitions('license');
+const environments = getTagDefinitions('environment');
+const verifications = getTagDefinitions('verification');
+const accessTypes = getTagDefinitions('accessTypes');
+const streams = getTagDefinitions('streams');
+const tagGroups = [
+  { key: 'tasks', label: t('editor.tasks'), defs: getTagDefinitions('tasks') },
+  { key: 'dimensions', label: t('editor.dimensions'), defs: getTagDefinitions('dimensions') },
+  { key: 'trainingUses', label: t('editor.trainingUses'), defs: getTagDefinitions('trainingUses') },
+  { key: 'quality', label: t('editor.quality'), defs: getTagDefinitions('quality') },
+];
+const linksText = raw.access.links.map((link) => `${link.label} | ${link.url} | ${link.kind}`).join('\n');
+const examplesText = raw.usage.examples.map((link) => `${link.label} | ${link.url} | ${link.kind}`).join('\n');
+const sizeGb = String(Number((raw.scale.bytes / 1024 ** 3).toFixed(3)));
+const hours = String(Number((raw.scale.durationSeconds / 3600).toFixed(2)));
+const pageTitle = `${t('editor.title')} — ${dataset.meta.title}`;
+---
+<BaseLayout lang={lang} title={pageTitle} description={t('editor.description')} noindex>
+  <header class="page-hero">
+    <div class="container page-hero__inner">
+      <div class="page-hero__copy">
+        <nav class="breadcrumbs" style="padding-top:0">
+          <a href={withBase(`/${lang}/edit/`)}>{t('editor.eyebrow')}</a>
+          <span class="breadcrumbs__sep">/</span>
+          <a href={withBase(`/${lang}/datasets/${raw.slug}/`)}>{dataset.meta.title}</a>
+        </nav>
+        <h1 style="margin-top:16px">{t('editor.title')}</h1>
+        <p class="page-hero__desc">{t('editor.description')}</p>
+      </div>
+      <img
+        src={withBase(dataset.meta.cover)}
+        alt=""
+        width="240"
+        height="135"
+        style="width:240px;aspect-ratio:16/9;object-fit:cover;border:var(--border-w) solid var(--border);box-shadow:var(--shadow-md)"
+      />
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container edit-layout">
+      <form id="dataset-editor" class="form-shell" style="max-width:none" novalidate>
+        <div class="notice notice--info" style="margin-bottom:22px">
+          <PixelIcon name="info" size={15} />
+          <span>{t('editor.preserveNote')}</span>
+        </div>
+
+        <section class="form-section">
+          <div class="form-section__head">
+            <span class="form-section__number">01</span>
+            <h2 class="form-section__title">{t('editor.basicTitle')}</h2>
+          </div>
+          <div class="form-section__body">
+            <div class="field-row">
+              <div class="field">
+                <label for="title-en">{t('editor.titleEn')}</label>
+                <input id="title-en" class="input" name="titleEn" value={raw.title.en ?? ''} data-editor-field />
+              </div>
+              <div class="field">
+                <label for="title-zh">{t('editor.titleZh')}</label>
+                <input id="title-zh" class="input" name="titleZh" value={raw.title.zh ?? ''} data-editor-field />
+              </div>
+            </div>
+            <div class="field-row" style="margin-top:18px">
+              <div class="field">
+                <label for="summary-en">{t('editor.summaryEn')}</label>
+                <textarea id="summary-en" class="textarea" name="summaryEn" data-editor-field>{raw.summary.en ?? ''}</textarea>
+              </div>
+              <div class="field">
+                <label for="summary-zh">{t('editor.summaryZh')}</label>
+                <textarea id="summary-zh" class="textarea" name="summaryZh" data-editor-field>{raw.summary.zh ?? ''}</textarea>
+              </div>
+            </div>
+            <div class="field" style="margin-top:18px">
+              <label for="license">{t('editor.license')}</label>
+              <select id="license" class="select" name="license" data-editor-field>
+                {licenses.map((license) => (
+                  <option value={license.slug} selected={raw.license === license.slug}>{license.name[lang] ?? license.name.en ?? license.slug}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="form-section__head">
+            <span class="form-section__number" style="background:var(--sky);color:var(--sky-ink)">02</span>
+            <h2 class="form-section__title">{t('editor.formatTitle')}</h2>
+          </div>
+          <div class="form-section__body">
+            <div class="field-row">
+              <div class="field">
+                <label for="format">{t('editor.format')}</label>
+                <select id="format" class="select" name="format" data-editor-field>
+                  {formats.map((format) => (
+                    <option value={format.slug} selected={raw.format === format.slug}>{format.name[lang] ?? format.name.en ?? format.slug}</option>
+                  ))}
+                </select>
+              </div>
+              <div class="field">
+                <label for="environment">{t('editor.environment')}</label>
+                <select id="environment" class="select" name="environment" data-editor-field>
+                  {environments.map((environment) => (
+                    <option value={environment.slug} selected={raw.environment === environment.slug}>
+                      {environment.name[lang] ?? environment.name.en ?? environment.slug}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div class="field-row" style="margin-top:18px">
+              <div class="field">
+                <label for="mc-versions">{t('editor.mcVersions')}</label>
+                <input id="mc-versions" class="input" name="mcVersions" value={raw.compatibility.minecraftVersions.join(', ')} data-editor-field />
+                <p class="field-help">{t('editor.mcHint')}</p>
+              </div>
+              <div class="field">
+                <label for="mod-versions">{t('editor.modVersions')}</label>
+                <input id="mod-versions" class="input" name="modVersions" value={(raw.compatibility.modVersions ?? []).join(', ')} data-editor-field />
+              </div>
+            </div>
+            <div class="field-row" style="margin-top:18px">
+              <div class="field">
+                <label for="loader">{t('editor.loader')}</label>
+                <input id="loader" class="input" name="loader" value={raw.compatibility.loader ?? ''} data-editor-field />
+              </div>
+              <div class="field">
+                <label for="data-format-version">{t('editor.dataFormatVersion')}</label>
+                <input id="data-format-version" class="input" name="dataFormatVersion" value={raw.compatibility.dataFormatVersion ?? ''} data-editor-field />
+              </div>
+            </div>
+            <div class="field" style="margin-top:18px">
+              <label for="verification">{t('editor.verification')}</label>
+              <select id="verification" class="select" name="verification" data-editor-field>
+                {verifications.map((verification) => (
+                  <option value={verification.slug} selected={raw.compatibility.verification === verification.slug}>
+                    {verification.name[lang] ?? verification.name.en ?? verification.slug}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <fieldset style="border:0;padding:0;margin:18px 0 0">
+              <legend class="field-label" style="margin-bottom:8px">{t('editor.streams')}</legend>
+              <div class="checkbox-grid">
+                {streams.map((stream) => (
+                  <label class="checkbox">
+                    <input type="checkbox" name="streams" value={stream.slug} checked={(raw.compatibility.streams as string[]).includes(stream.slug)} data-editor-field />
+                    {getTagName('streams', stream.slug, lang)}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="form-section__head">
+            <span class="form-section__number" style="background:var(--gold);color:var(--gold-ink)">03</span>
+            <h2 class="form-section__title">{t('editor.scaleTitle')}</h2>
+          </div>
+          <div class="form-section__body">
+            <div class="field-row" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+              <div class="field">
+                <label for="episodes">{t('editor.episodes')}</label>
+                <input id="episodes" class="input" type="number" min="0" step="1" name="episodes" value={raw.scale.episodes} data-editor-field />
+              </div>
+              <div class="field">
+                <label for="size-gb">{t('editor.sizeGb')}</label>
+                <input id="size-gb" class="input" type="number" min="0" step="0.01" name="sizeGb" value={sizeGb} data-editor-field />
+              </div>
+              <div class="field">
+                <label for="duration-hours">{t('editor.durationHours')}</label>
+                <input id="duration-hours" class="input" type="number" min="0" step="0.01" name="durationHours" value={hours} data-editor-field />
+              </div>
+            </div>
+            <p class="field-help" style="margin-top:8px">{formatBytes(raw.scale.bytes, lang)} · {formatDuration(raw.scale.durationSeconds, lang)} · {formatInteger(raw.scale.episodes, lang)} EP</p>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="form-section__head">
+            <span class="form-section__number" style="background:var(--amethyst);color:var(--amethyst-ink)">04</span>
+            <h2 class="form-section__title">{t('editor.tagsTitle')}</h2>
+          </div>
+          <div class="form-section__body">
+            {tagGroups.map((group) => (
+              <fieldset style="border:0;padding:0;margin:0 0 16px">
+                <legend class="field-label" style="margin-bottom:8px">{group.label}</legend>
+                <div class="checkbox-grid">
+                  {group.defs.map((definition) => (
+                    <label class="checkbox">
+                      <input
+                        type="checkbox"
+                        name={group.key}
+                        value={definition.slug}
+                        checked={(raw.tags[group.key as keyof typeof raw.tags] as string[]).includes(definition.slug)}
+                        data-editor-field
+                      />
+                      {definition.name[lang] ?? definition.name.en ?? definition.slug}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            ))}
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="form-section__head">
+            <span class="form-section__number" style="background:var(--red);color:#fff">05</span>
+            <h2 class="form-section__title">{t('editor.accessTitle')}</h2>
+          </div>
+          <div class="form-section__body">
+            <div class="field">
+              <label for="access-type">{t('editor.accessType')}</label>
+              <select id="access-type" class="select" name="accessType" data-editor-field>
+                {accessTypes.map((access) => (
+                  <option value={access.slug} selected={raw.access.type === access.slug}>{access.name[lang] ?? access.name.en ?? access.slug}</option>
+                ))}
+              </select>
+            </div>
+            <div class="field" style="margin-top:18px">
+              <label for="download-links">{t('editor.downloadLinks')}</label>
+              <textarea id="download-links" class="textarea" name="downloadLinks" data-editor-field>{linksText}</textarea>
+              <p class="field-help">{t('editor.linksHint')}</p>
+            </div>
+            <fieldset style="border:0;padding:0;margin:18px 0 0">
+              <legend class="field-label" style="margin-bottom:8px">{t('dataset.privacyTitle')}</legend>
+              <div class="checkbox-grid" style="grid-template-columns:1fr">
+                <label class="checkbox">
+                  <input type="checkbox" name="privacyPersonal" checked={raw.access.privacy.personalData} data-editor-field />
+                  {t('editor.privacyPersonal')}
+                </label>
+                <label class="checkbox">
+                  <input type="checkbox" name="privacyThirdParty" checked={raw.access.privacy.thirdPartyContent} data-editor-field />
+                  {t('editor.privacyThirdParty')}
+                </label>
+                <label class="checkbox">
+                  <input type="checkbox" name="privacyRedistribute" checked={raw.access.privacy.redistributionPermitted} data-editor-field />
+                  {t('editor.privacyRedistribute')}
+                </label>
+              </div>
+            </fieldset>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="form-section__head">
+            <span class="form-section__number" style="background:var(--grass)">06</span>
+            <h2 class="form-section__title">{t('editor.usageTitle')}</h2>
+          </div>
+          <div class="form-section__body">
+            {[
+              ['howToLoad', t('editor.howToLoad')],
+              ['recommendedUse', t('editor.recommendedUse')],
+              ['limitations', t('editor.limitations')],
+            ].map(([key, label]) => (
+              <div style="margin-bottom:18px">
+                <div class="field-label" style="margin-bottom:7px">{label}</div>
+                <div class="field-row">
+                  <div class="field">
+                    <label for={`${key}-en`} style="font-family:var(--font-body);font-size:10px;color:var(--muted)">English</label>
+                    <textarea id={`${key}-en`} class="textarea" name={`${key}En`} data-editor-field>{(raw.usage[key as 'howToLoad' | 'recommendedUse' | 'limitations']).en ?? ''}</textarea>
+                  </div>
+                  <div class="field">
+                    <label for={`${key}-zh`} style="font-family:var(--font-body);font-size:10px;color:var(--muted)">中文</label>
+                    <textarea id={`${key}-zh`} class="textarea" name={`${key}Zh`} data-editor-field>{(raw.usage[key as 'howToLoad' | 'recommendedUse' | 'limitations']).zh ?? ''}</textarea>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div class="field">
+              <label for="example-links">{t('editor.examples')}</label>
+              <textarea id="example-links" class="textarea" name="exampleLinks" data-editor-field>{examplesText}</textarea>
+              <p class="field-help">{t('editor.examplesHint')}</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="form-section__head">
+            <span class="form-section__number" style="background:var(--stone);color:#111">07</span>
+            <h2 class="form-section__title">{t('editor.noteTitle')}</h2>
+          </div>
+          <div class="form-section__body">
+            <div class="field">
+              <label for="correction-note">{t('editor.noteLabel')}</label>
+              <textarea id="correction-note" class="textarea" name="correctionNote" placeholder={t('editor.notePlaceholder')} required></textarea>
+              <p class="field-help">{t('editor.publicIssueNote')}</p>
+            </div>
+          </div>
+        </section>
+
+        <div class="form-actions">
+          <p class="form-message" data-editor-message hidden></p>
+          <button type="button" class="btn btn--small" data-copy-json>
+            <PixelIcon name="copy" size={12} /> {t('editor.copyJson')}
+          </button>
+          <button type="button" class="btn btn--small" data-download-json>
+            <PixelIcon name="download" size={12} /> {t('editor.downloadJson')}
+          </button>
+          <button type="submit" class="btn btn--primary" id="submit-correction">
+            <PixelIcon name="upload" size={13} /> {t('editor.submit')}
+          </button>
+        </div>
+      </form>
+
+      <aside class="edit-side stack">
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="h3" style="font-size:13px">{t('editor.previewTitle')}</h2>
+          </div>
+          <div class="panel-body">
+            <p class="small muted" data-change-count>{t('editor.changeCount', { count: 0 })}</p>
+            <div class="edit-changes" data-change-list></div>
+            <p class="tiny faint" style="margin-top:12px">{t('editor.reviewNote')}</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2 class="h3" style="font-size:13px">{t('editor.loginTitle')}</h2>
+          </div>
+          <div class="panel-body">
+            <p class="small muted" data-login-state>{t('editor.loginDesc')}</p>
+            <div class="cluster" data-login-action style="margin-top:12px">
+              <button type="button" class="btn btn--small js-auth-open">
+                <PixelIcon name="github" size={12} /> {t('actions.login')}
+              </button>
+            </div>
+            <div class="divider"></div>
+            <div class="glance-list">
+              <div class="glance-row"><dt>{t('editor.episodes')}</dt><dd>{formatInteger(raw.scale.episodes, lang)}</dd></div>
+              <div class="glance-row"><dt>{t('common.lastUpdated')}</dt><dd>{formatDate(raw.updatedAt, lang)}</dd></div>
+              <div class="glance-row"><dt>Slug</dt><dd class="mono" style="font-size:10px">{raw.slug}</dd></div>
+            </div>
+            <div class="notice notice--danger" style="margin-top:12px">
+              <PixelIcon name="alert" size={14} />
+              <span>{t('editor.preserveNote')}</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <script type="application/json" id="dataset-source" set:html={safeJson}></script>
+  <script>
+    import '../../../scripts/editor';
+  </script>
+</BaseLayout>

@@ -1,0 +1,140 @@
+---
+import type { Lang } from '../config';
+import { withBase } from '../config';
+import { getT } from '../i18n';
+import { getTag, getTagName } from '../lib/data';
+import type { DatasetWithMeta } from '../lib/types';
+import { formatBytes, formatDate, formatDuration, formatInteger } from '../lib/format';
+import PixelIcon from './PixelIcon.astro';
+
+interface Props {
+  dataset: DatasetWithMeta;
+  lang: Lang;
+  large?: boolean;
+  eager?: boolean;
+}
+
+const { dataset, lang, large = false, eager = false } = Astro.props;
+const t = await getT(lang);
+const format = getTag('format', dataset.format);
+const verification = getTag('verification', dataset.compatibility.verification);
+const cover = withBase(dataset.meta.cover);
+const primaryTasks = dataset.tags.tasks.slice(0, large ? 3 : 2);
+const dimension = dataset.tags.dimensions[0];
+const showDeprecation = dataset.deprecation && dataset.deprecation.status !== 'active';
+const displayUpdated = dataset.meta.fallback;
+const searchBlob = `${dataset.meta.searchText} ${dataset.slug}`;
+const attrs = {
+  'data-slug': dataset.slug,
+  'data-format': dataset.format,
+  'data-mc': dataset.compatibility.minecraftVersions.join('|'),
+  'data-mod': (dataset.compatibility.modVersions ?? []).join('|'),
+  'data-env': dataset.environment,
+  'data-verify': dataset.compatibility.verification,
+  'data-task': dataset.tags.tasks.join('|'),
+  'data-dim': dataset.tags.dimensions.join('|'),
+  'data-use': dataset.tags.trainingUses.join('|'),
+  'data-quality': dataset.tags.quality.join('|'),
+  'data-license': dataset.license,
+  'data-size': String(dataset.scale.bytes),
+  'data-size-range': dataset.meta.sizeRange,
+  'data-video': String(dataset.meta.streamSet.has('video')),
+  'data-events': String(dataset.meta.streamSet.has('events')),
+  'data-access': dataset.access.type,
+  'data-created': dataset.createdAt,
+  'data-updated': dataset.updatedAt,
+  'data-likes': String(dataset.meta.likeCount),
+  'data-comments': String(dataset.meta.commentCount),
+  'data-demo': String(Boolean(dataset.demo)),
+  'data-deprecated': String(Boolean(showDeprecation)),
+  'data-search': searchBlob,
+};
+---
+<article class:list={['dataset-card', { 'dataset-card--large': large }]} {...attrs}>
+  <div class="card-cover">
+    <img
+      src={cover}
+      alt={dataset.meta.title}
+      width="1280"
+      height="720"
+      loading={eager ? 'eager' : 'lazy'}
+      decoding={eager ? 'sync' : 'async'}
+    />
+    <div class="card-cover__badges">
+      <div class="card-cover__badges-left">
+        <span class={`badge card-cover__badge tone-${format?.tone ?? 'stone'}`}>
+          <span class="badge-dot" aria-hidden="true"></span>
+          {getTagName('format', dataset.format, lang)}
+        </span>
+        {dataset.demo && <span class="badge card-cover__badge badge--outline" style="background:var(--panel);color:var(--ink)">{t('card.demo')}</span>}
+      </div>
+      <div class="card-cover__badges-right">
+        <span class={`badge card-cover__badge tone-${verification?.tone ?? 'stone'}`}>
+          {getTagName('verification', dataset.compatibility.verification, lang)}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <div class="card-kicker">
+      <span class="card-kicker__dot" aria-hidden="true"></span>
+      {getTagName('environment', dataset.environment, lang)}
+      <span aria-hidden="true">/</span>
+      {dataset.compatibility.minecraftVersions.length > 0
+        ? `MC ${dataset.compatibility.minecraftVersions.slice(0, 2).join(' · ')}`
+        : getTagName('accessTypes', dataset.access.type, lang)}
+      {showDeprecation && (
+        <>
+          <span aria-hidden="true">/</span>
+          <span style="color:var(--red-deep)">{t('dataset.deprecated')}</span>
+        </>
+      )}
+    </div>
+    <h3 class="card-title">
+      <a href={withBase(`/${lang}/datasets/${dataset.slug}/`)}>{dataset.meta.title}</a>
+    </h3>
+    <p class="card-summary">{dataset.meta.summary}</p>
+
+    <div class="card-tags" aria-label={t('dataset.tasks')}>
+      {primaryTasks.map((task) => (
+        <span class="tag">{getTagName('tasks', task, lang)}</span>
+      ))}
+      {dimension && <span class="tag">{getTagName('dimensions', dimension, lang)}</span>}
+      {dataset.tags.tasks.length > primaryTasks.length && (
+        <span class="tag">+{dataset.tags.tasks.length - primaryTasks.length}</span>
+      )}
+    </div>
+
+    <div class="card-stats">
+      <span class="card-stat">
+        <PixelIcon name="layout" size={11} />
+        <strong>{formatInteger(dataset.scale.episodes, lang)}</strong> {t(dataset.scale.episodes === 1 ? 'card.episode' : 'card.episodes')}
+      </span>
+      <span class="card-stat">
+        <PixelIcon name="package" size={11} />
+        <strong>{formatBytes(dataset.scale.bytes, lang)}</strong>
+      </span>
+      <span class="card-stat">
+        <PixelIcon name="clock" size={11} />
+        {formatDuration(dataset.scale.durationSeconds, lang)}
+      </span>
+    </div>
+  </div>
+
+  <div class="card-footer">
+    <span class="card-footer__left">
+      <PixelIcon name="clock" size={10} />
+      {formatDate(dataset.updatedAt, lang)}
+      {displayUpdated && <span class="tag" style="padding:0 4px;font-size:9px">{lang === 'zh' ? '含回退' : 'fallback'}</span>}
+    </span>
+    <span class="card-footer__right">
+      <span class="card-stat" aria-label={t('dataset.like')}>
+        <PixelIcon name="heart" size={10} /> {formatInteger(dataset.meta.likeCount, lang)}
+      </span>
+      <span class="card-stat" aria-label={t('card.comments')}>
+        <PixelIcon name="comment" size={10} /> {formatInteger(dataset.meta.commentCount, lang)}
+      </span>
+    </span>
+  </div>
+</article>

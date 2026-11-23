@@ -1,0 +1,424 @@
+name: Dataset submission
+description: Submit a Minecraft dataset to the MineWorld catalog. The form is parsed into a validated JSON listing and a pull request.
+title: "[Dataset] "
+labels: ["dataset-submission", "needs-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 提交数据集 / Submit a dataset
+
+        填写这份表单后，自动化会生成一个结构化 JSON 条目和 Pull Request。你**不需要**使用 Mwarecorder；回放、原始视频和自定义数据集同样欢迎。
+
+        This form becomes a validated JSON listing and a pull request. Mwarecorder is optional; replays, video and custom datasets are welcome.
+
+        - 中英标题与短描述至少填写一种语言。 / At least one language for the title and description.
+        - 封面拖入封面文本框即可，GitHub 会托管图片。 / Drag a cover image into the cover field.
+        - 不要提交私有令牌、个人隐私或无权分发的内容。 / Do not submit private tokens, personal data or content you cannot redistribute.
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 基本信息 / Basic information
+
+  - type: input
+    id: title-zh
+    attributes:
+      label: 中文标题 / Title (Chinese)
+      description: 简短、可搜索的中文标题。Short, searchable title in Chinese.
+      placeholder: 空岛晨曦 · 建造入门数据集
+    validations:
+      required: false
+
+  - type: input
+    id: title-en
+    attributes:
+      label: English title / 英文标题
+      description: Short, searchable title in English.
+      placeholder: Skyblock Dawn — Builder Starter Pack
+    validations:
+      required: false
+
+  - type: textarea
+    id: summary-zh
+    attributes:
+      label: 中文短描述 / Short description (Chinese)
+      description: 1–3 句话，说明数据内容、规模与用途。1–3 sentences describing content, scale and intended use.
+      placeholder: 48 段单人空岛基地建造录像，四路数据流完整对齐……
+    validations:
+      required: false
+
+  - type: textarea
+    id: summary-en
+    attributes:
+      label: English short description / 英文短描述
+      description: 1–3 sentences describing content, scale and intended use.
+      placeholder: 48 calm singleplayer episodes of building a starter skyblock base…
+    validations:
+      required: false
+
+  - type: dropdown
+    id: license
+    attributes:
+      label: License / 许可证
+      description: 必须与实际归档一致，并允许你选择的访问方式。Must match the archive and permit your chosen access model.
+      options:
+        - CC BY 4.0 (cc-by-4.0)
+        - CC BY-SA 4.0 (cc-by-sa-4.0)
+        - CC0 1.0 (cc0-1.0)
+        - MIT (mit)
+        - Apache-2.0 (apache-2.0)
+        - ODC-By 1.0 (odc-by-1.0)
+        - Research only (research-only)
+        - All rights reserved (all-rights-reserved)
+        - Other / custom (other)
+    validations:
+      required: true
+
+  - type: textarea
+    id: cover
+    attributes:
+      label: Cover / 封面 (URL or drag & drop)
+      description: 16:9, ideally 1280×720, max 2 MB. Drag an image here or paste its URL. The workflow converts it to WebP and creates a thumbnail.
+      placeholder: Drag your image here, or paste https://github.com/user-attachments/assets/…
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 来源与兼容 / Source & compatibility
+
+        Mwarecorder 字段对非 Mwarecorder 数据可留空。Non-Mwarecorder submissions may leave the recorder fields empty.
+
+  - type: dropdown
+    id: format
+    attributes:
+      label: Format / 格式
+      options:
+        - Mwarecorder (mwarecorder)
+        - Minecraft replay / demo (minecraft-replay)
+        - Raw video (raw-video)
+        - Custom dataset (custom-dataset)
+        - Other (other)
+    validations:
+      required: true
+
+  - type: input
+    id: minecraft-versions
+    attributes:
+      label: Minecraft version(s) / Minecraft 版本
+      description: Comma separated, e.g. 1.21.7, 1.21.4. Use "not applicable" when unknown.
+      placeholder: 1.21.7
+    validations:
+      required: false
+
+  - type: input
+    id: mod-versions
+    attributes:
+      label: Recorder version(s) / 录制模组版本
+      description: Mwarecorder mod version(s), if applicable.
+      placeholder: 1.0.0
+    validations:
+      required: false
+
+  - type: input
+    id: loader
+    attributes:
+      label: Loader / 加载器
+      description: Optional, e.g. Fabric 0.19.5.
+    validations:
+      required: false
+
+  - type: input
+    id: data-format-version
+    attributes:
+      label: Data format version / 数据格式版本
+      description: Mwarecorder format version (e.g. 2.0), ReplayMod version, or your own schema version.
+      placeholder: "2.0"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: verification
+    attributes:
+      label: Verification / 校验状态
+      options:
+        - Verified with the official verifier (verified)
+        - Self-reported check (self-reported)
+        - Unverified (unverified)
+        - Not applicable to this format (not-applicable)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: streams
+    attributes:
+      label: Data streams / 数据流
+      description: Select every stream that is actually included. Select at least one.
+      options:
+        - label: Video frames (video)
+        - label: Player state (state)
+        - label: Actions (action)
+        - label: Game events (events)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment / 环境
+      options:
+        - Singleplayer (singleplayer)
+        - Multiplayer (multiplayer)
+        - Mixed (mixed)
+        - Dedicated server (server)
+        - Custom map (custom-map)
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 规模与内容 / Scale & content
+
+  - type: input
+    id: episodes
+    attributes:
+      label: Episode count / Episode 数
+      description: Integer. Count real episode directories or files.
+      placeholder: "48"
+    validations:
+      required: true
+
+  - type: input
+    id: size-gb
+    attributes:
+      label: Total size in GB / 总大小 (GB)
+      description: Use the actual archive size as a number, e.g. 6.2.
+      placeholder: "6.2"
+    validations:
+      required: true
+
+  - type: input
+    id: duration-hours
+    attributes:
+      label: Total duration in hours / 总时长 (小时)
+      description: Use the actual total duration as a number, e.g. 5.8.
+      placeholder: "5.8"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: tasks
+    attributes:
+      label: Task tags / 任务标签
+      description: Choose all meaningful tasks.
+      options:
+        - label: Building 建造 (building)
+        - label: Mining 挖掘 (mining)
+        - label: Combat 战斗 (combat)
+        - label: Exploration 探索 (exploration)
+        - label: Farming 农业 (farming)
+        - label: Crafting 合成 (crafting)
+        - label: Redstone 红石 (redstone)
+        - label: Navigation 导航 (navigation)
+        - label: Survival 生存 (survival)
+        - label: Trading 交易 (trading)
+        - label: Fishing 钓鱼 (fishing)
+        - label: Parkour 跑酷 (parkour)
+        - label: PvP (pvp)
+        - label: Speedrun 速通 (speedrun)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: dimensions
+    attributes:
+      label: Dimensions / 维度
+      options:
+        - label: Overworld 主世界 (overworld)
+        - label: The Nether 下界 (nether)
+        - label: The End 末地 (end)
+        - label: Mixed dimensions 跨维度 (mixed)
+        - label: Superflat / custom 超平坦 / 自定义 (superflat)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: training-uses
+    attributes:
+      label: Training uses / 训练用途
+      options:
+        - label: World model 世界模型 (world-model)
+        - label: Imitation learning 模仿学习 (imitation-learning)
+        - label: Offline RL 离线强化学习 (offline-rl)
+        - label: Video prediction 视频预测 (video-prediction)
+        - label: Agent benchmark 智能体基准 (agent-benchmark)
+        - label: Representation learning 表征学习 (representation-learning)
+        - label: Navigation research 导航研究 (navigation)
+        - label: Planning 规划 (planning)
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: quality
+    attributes:
+      label: Quality annotations / 质量标注
+      description: Optional, but be honest. Include "needs-review" when caveats exist.
+      options:
+        - label: Strictly verified 严格校验 (strict-verified)
+        - label: Alignment checked 对齐已验证 (alignment-checked)
+        - label: Community reviewed 社区复核 (community-reviewed)
+        - label: Clean controls 干净输入 (clean-controls)
+        - label: Privacy redacted 隐私已脱敏 (redacted)
+        - label: Needs review 需要复核 (needs-review)
+        - label: Experimental 实验性 (experimental)
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 访问与合规 / Access & compliance
+
+  - type: dropdown
+    id: access-type
+    attributes:
+      label: Access type / 访问类型
+      options:
+        - Open download 公开下载 (open)
+        - Request access 申请访问 (request)
+        - Restricted 受限 (restricted)
+    validations:
+      required: true
+
+  - type: textarea
+    id: links
+    attributes:
+      label: Download and access links / 下载与访问链接
+      description: One link per line, format — Label | https://example.com/download | kind. Kind is optional (download, mirror, request, sample, homepage, paper, benchmark). At least one link.
+      placeholder: |
+        Dataset archive | https://example.com/my-dataset.tar | download
+        Project page | https://example.com/project | homepage
+    validations:
+      required: true
+
+  - type: dropdown
+    id: privacy-personal
+    attributes:
+      label: Contains personal player data? / 是否包含玩家个人数据？
+      description: Names, chat, skins, account identifiers, server IPs.
+      options:
+        - "No / 否"
+        - "Yes / 是"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: privacy-third-party
+    attributes:
+      label: Contains third-party content? / 是否包含第三方内容？
+      description: Maps, mods, music, other people's builds or assets.
+      options:
+        - "No / 否"
+        - "Yes / 是"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: privacy-redistribution
+    attributes:
+      label: Redistribution permitted? / 是否允许再分发？
+      description: Must be true for an open download.
+      options:
+        - "Yes / 是"
+        - "No / 否"
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ## 使用说明 / Usage notes
+
+        每条说明至少填写一种语言。At least one language is required for each usage field.
+
+  - type: textarea
+    id: how-to-load-en
+    attributes:
+      label: How to load (English) / 加载说明（英文）
+      description: File layout, loader script, dependencies, command example.
+      placeholder: Download and extract one episode, then run `python episode_to_dataset.py …`
+    validations:
+      required: false
+
+  - type: textarea
+    id: how-to-load-zh
+    attributes:
+      label: How to load (Chinese) / 加载说明（中文）
+      description: 文件结构、加载脚本、依赖与命令示例。
+    validations:
+      required: false
+
+  - type: textarea
+    id: recommended-use-en
+    attributes:
+      label: Recommended use (English) / 推荐用法（英文）
+    validations:
+      required: false
+
+  - type: textarea
+    id: recommended-use-zh
+    attributes:
+      label: Recommended use (Chinese) / 推荐用法（中文）
+    validations:
+      required: false
+
+  - type: textarea
+    id: limitations-en
+    attributes:
+      label: Known limitations (English) / 已知限制（英文）
+      description: Dropped frames, missing dimensions, privacy caveats, missing actions…
+    validations:
+      required: false
+
+  - type: textarea
+    id: limitations-zh
+    attributes:
+      label: Known limitations (Chinese) / 已知限制（中文）
+    validations:
+      required: false
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Example links / 示例链接 (optional)
+      description: One per line — Label | https://example.com | homepage.
+    validations:
+      required: false
+
+  - type: input
+    id: contributors
+    attributes:
+      label: Additional contributors / 其他贡献者
+      description: Comma-separated GitHub logins. Your own account is added automatically.
+      placeholder: alice, bob
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes for maintainers / 给维护者的备注
+      placeholder: Anything the reviewer should know — mirrors, access requests, related datasets…
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: declaration
+    attributes:
+      label: Declaration / 声明
+      options:
+        - label: I have the right to share this dataset under the selected license, and the privacy answers are accurate. / 我有权在所选许可证下分享此数据，隐私回答真实准确。
+          required: true
